@@ -1,0 +1,151 @@
+﻿/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #121212;
+    color: #f5f5f5;
+    padding: 2rem 1rem;
+}
+
+/* Container do formulário */
+.auth-container {
+    background: #1e1e1e;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    width: 100%;
+    max-width: 450px;
+}
+
+.logo {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+    .logo img {
+        width: 120px;
+        border-radius: 20px;
+    }
+
+h1, h4 {
+    text-align: center;
+    color: #ffffff;
+    margin-bottom: 1.5rem;
+}
+
+h4 {
+    font-size: 18px;
+    font-weight: normal;
+    color: #ccc;
+}
+
+/* Grupos de input */
+.form-group {
+    margin-bottom: 1rem;
+    text-align: left;
+}
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.3rem;
+        font-size: 14px;
+        color: #ccc;
+    }
+
+.form-control {
+    width: 100%;
+    padding: 0.7rem;
+    border: 1px solid #333;
+    border-radius: 8px;
+    outline: none;
+    font-size: 14px;
+    background: #2a2a2a;
+    color: #f5f5f5;
+}
+
+    .form-control:focus {
+        border-color: #71100f;
+    }
+
+/* Mensagens de erro */
+.text-danger {
+    color: #ff6b6b;
+    font-size: 12px;
+    display: block;
+    margin-top: 0.3rem;
+}
+
+/* Validação summary */
+.validation-summary-errors ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+}
+
+.validation-summary-errors li {
+    background: #441010;
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    color: #ff6b6b;
+    font-size: 13px;
+}
+
+/* Botão */
+.btn-primary {
+    width: 100%;
+    padding: 0.9rem;
+    border: none;
+    border-radius: 8px;
+    background: #71100f;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 0.5rem;
+}
+
+    .btn-primary:hover {
+        background: #430909;
+    }
+
+/* Link de navegação */
+.auth-link {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 14px;
+    color: #bbb;
+}
+
+    .auth-link a {
+        color: #4da3ff;
+        text-decoration: none;
+    }
+
+        .auth-link a:hover {
+            text-decoration: underline;
+        }
+
+/* Responsividade */
+@media (max-width: 500px) {
+    .auth-container {
+        padding: 1.5rem;
+    }
+
+    .logo img {
+        width: 100px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+}

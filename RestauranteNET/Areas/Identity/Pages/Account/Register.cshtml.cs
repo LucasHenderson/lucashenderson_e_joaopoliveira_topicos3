@@ -44,31 +44,34 @@ namespace RestauranteNET.Areas.Identity.Pages.Account
 
         public class InputModel
         {
-            [Required]
-            [EmailAddress]
+            [Required(ErrorMessage = "O email é obrigatório")]
+            [EmailAddress(ErrorMessage = "Email inválido")]
             [Display(Name = "Email")]
             public string Email { get; set; }
 
-            [Required]
+            [Required(ErrorMessage = "O nome completo é obrigatório")]
+            [StringLength(100, ErrorMessage = "O nome deve ter no máximo {1} caracteres")]
             [Display(Name = "Nome completo")]
             public string NomeCompleto { get; set; }
 
+            [StringLength(200, ErrorMessage = "O endereço deve ter no máximo {1} caracteres")]
             [Display(Name = "Endereço")]
             public string? Endereco { get; set; }
 
-            [Phone]
+            [Phone(ErrorMessage = "Telefone inválido")]
+            [RegularExpression(@"^\d{2}\s\d{5}-\d{4}$", ErrorMessage = "Formato: 99 99999-9999")]
             [Display(Name = "Telefone")]
             public string? Telefone { get; set; }
 
-            [Required]
-            [StringLength(100, ErrorMessage = "A {0} deve ter pelo menos {2} e no máximo {1} caracteres.", MinimumLength = 6)]
+            [Required(ErrorMessage = "A senha é obrigatória")]
+            [StringLength(100, ErrorMessage = "A senha deve ter entre {2} e {1} caracteres", MinimumLength = 6)]
             [DataType(DataType.Password)]
             [Display(Name = "Senha")]
             public string Password { get; set; }
 
             [DataType(DataType.Password)]
             [Display(Name = "Confirmar senha")]
-            [Compare("Password", ErrorMessage = "As senhas não conferem.")]
+            [Compare("Password", ErrorMessage = "As senhas não coincidem")]
             public string ConfirmPassword { get; set; }
         }
 
@@ -85,6 +88,14 @@ namespace RestauranteNET.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
+                // Verifica se o email já existe
+                var existingUser = await _userManager.FindByEmailAsync(Input.Email);
+                if (existingUser != null)
+                {
+                    ModelState.AddModelError(string.Empty, "Este email já está cadastrado.");
+                    return Page();
+                }
+
                 var user = new Usuario
                 {
                     UserName = Input.Email,
@@ -99,8 +110,6 @@ namespace RestauranteNET.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("Usuário criou uma nova conta com senha.");
-
-                    // Faz login automaticamente após registro
                     await _signInManager.SignInAsync(user, isPersistent: false);
                     return LocalRedirect(returnUrl);
                 }
