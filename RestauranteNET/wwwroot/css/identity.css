@@ -149,3 +149,27 @@ h4 {
         font-size: 20px;
     }
 }
+
+/* Password wrapper com ícone de toggle */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+    .password-wrapper .form-control {
+        padding-right: 2.5rem;
+    }
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #ccc;
+    user-select: none;
+}
+
+    .toggle-password:hover {
+        color: #fff;
+    }

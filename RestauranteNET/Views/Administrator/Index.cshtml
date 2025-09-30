@@ -1,0 +1,43 @@
+﻿@{
+    ViewData["Title"] = "Administrador - Restaurant .NET";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/administrator.css" asp-append-version="true">
+</head>
+<body>
+    <!-- Topbar -->
+    <header class="topbar">
+        <div class="logo">
+            <a asp-controller="Administrator" asp-action="Index">
+                <img src="~/imgs/NET.png" alt="Logo">
+            </a>
+        </div>
+        <nav class="topbar-actions">
+            <a asp-controller="Administrator" asp-action="Orders" class="orders-btn">Pedidos e Reservas dos Clientes</a>
+            <div class="user-menu">
+                <img src="~/imgs/user-icon.png" alt="Usuário" class="user-icon">
+                <div class="dropdown">
+                    <a asp-area="Identity" asp-page="/Account/Manage/Index">Configurações</a>
+                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post" style="margin:0;">
+                        <button type="submit" style="background:none;border:none;color:#f5f5f5;padding:0.8rem;width:100%;text-align:left;cursor:pointer;">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <!-- Conteúdo -->
+    <div class="admin-container">
+        <h1>Gerenciar Menu</h1>
+        <button id="add-food-btn" class="add-btn">➕ Adicionar Nova Comida</button>
+        <ul id="food-list" class="food-list"></ul>
+        <div id="pagination" class="pagination"></div>
+    </div>
+    <script src="~/js/administrator.js" asp-append-version="true"></script>
+</body>
+</html>

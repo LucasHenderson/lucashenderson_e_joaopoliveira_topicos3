@@ -1,0 +1,84 @@
+﻿@model IEnumerable<RestauranteNET.Models.Comida>
+@{
+    ViewData["Title"] = "Cardápio - Restaurant .NET";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/menu.css" asp-append-version="true" />
+</head>
+<body>
+    <!-- Topbar -->
+    <header class="topbar">
+        <div class="logo">
+            <img src="~/imgs/NET.png" alt="Logo do Restaurante">
+        </div>
+        <nav class="topbar-actions">
+            <a asp-controller="Pedidos" asp-action="MeusPedidos" class="orders-btn">Meus Pedidos</a>
+            <div class="user-menu">
+                <img src="~/imgs/user-icon.png" alt="Usuário" class="user-icon">
+                <div class="dropdown">
+                    <a asp-area="Identity" asp-page="/Account/Manage/Index">Configurações</a>
+                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                        <button type="submit" style="background:none;border:none;color:#f5f5f5;padding:0.8rem;text-align:left;width:100%;cursor:pointer;">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <div class="menu-container">
+        <!-- Recomendação do Chefe -->
+        <section class="menu-section">
+            <h2>👨‍🍳 Recomendação do Chefe (20% OFF)</h2>
+            <div id="chef-list" class="food-list"></div>
+        </section>
+
+        <!-- Cardápio Completo -->
+        <section class="menu-section">
+            <h2>🍽️ Cardápio</h2>
+            <div id="menu-list" class="food-list"></div>
+        </section>
+
+        <!-- Opções de Serviço -->
+        <section class="service-section">
+            <h2>Escolha o tipo de serviço</h2>
+            <div class="service-options">
+                <button class="service-btn" data-type="proprio">📦 Delivery Próprio (+ R$15)</button>
+                <button class="service-btn" data-type="parceiro">🚚 Delivery Parceiro (+ R$5)</button>
+                <button class="service-btn" data-type="reserva">🍽️ Reservar Mesa (+ R$10)</button>
+            </div>
+
+            <!-- Reserva de horário -->
+            <div id="reservation-times" class="reservation hidden">
+                <h3>Escolha o horário da reserva:</h3>
+                <div class="reservation-options">
+                    <button class="reservation-btn" data-time="19">19:00</button>
+                    <button class="reservation-btn" data-time="20">20:00</button>
+                    <button class="reservation-btn" data-time="21">21:00</button>
+                    <button class="reservation-btn" data-time="22">22:00</button>
+                </div>
+                <p class="reserva-msg"></p>
+            </div>
+        </section>
+
+        <!-- Total e Confirmar -->
+        <section class="order-summary">
+            <h2>Total: R$ <span id="total">0,00</span></h2>
+            <button id="confirm-order" class="confirm-btn">Confirmar Pedido</button>
+        </section>
+    </div>
+
+    <script>
+        // Dados do cardápio vindos do servidor
+        const comidas = @Html.Raw(Json.Serialize(Model));
+    </script>
+    <script src="~/js/menu.js" asp-append-version="true"></script>
+</body>
+</html>

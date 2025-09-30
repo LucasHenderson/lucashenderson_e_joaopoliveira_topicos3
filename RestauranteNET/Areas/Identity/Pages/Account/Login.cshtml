@@ -2,28 +2,70 @@
 @model RestauranteNET.Areas.Identity.Pages.Account.LoginModel
 @{
     ViewData["Title"] = "Login";
+    Layout = null;
 }
 
-<h1>@ViewData["Title"]</h1>
-<div class="row">
-    <div class="col-md-6">
-        <form method="post">
-            <h4>Faça login em sua conta</h4>
-            <hr />
-            <div asp-validation-summary="All" class="text-danger"></div>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Restaurant .NET</title>
+    <link rel="stylesheet" href="~/css/identity.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">
+            <img src="~/imgs/NET.png" alt="Logo Restaurant .NET" />
+        </div>
+
+        <h1>@ViewData["Title"]</h1>
+        <h4>Faça login em sua conta</h4>
+
+        <form id="loginForm" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
             <div class="form-group">
                 <label asp-for="Input.Email"></label>
-                <input asp-for="Input.Email" class="form-control" />
+                <input asp-for="Input.Email" class="form-control" placeholder="Digite seu e-mail" autocomplete="username" />
                 <span asp-validation-for="Input.Email" class="text-danger"></span>
             </div>
+
             <div class="form-group">
                 <label asp-for="Input.Password"></label>
-                <input asp-for="Input.Password" class="form-control" />
+                <div class="password-wrapper">
+                    <input asp-for="Input.Password" class="form-control" id="password-input" placeholder="Digite sua senha" autocomplete="current-password" />
+                    <span class="toggle-password" data-target="password-input">👁️</span>
+                </div>
                 <span asp-validation-for="Input.Password" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">Entrar</button>
-            </div>
+
+            <button id="loginSubmit" type="submit" class="btn-primary">Entrar</button>
         </form>
+
+        <p class="auth-link">
+            Não tem conta? <a asp-page="./Register">Cadastre-se</a>
+        </p>
     </div>
-</div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        // Toggle de mostrar/ocultar senha
+        document.querySelectorAll(".toggle-password").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const targetId = btn.getAttribute("data-target");
+                const input = document.getElementById(targetId);
+                if (input.type === "password") {
+                    input.type = "text";
+                    btn.textContent = "❌";
+                } else {
+                    input.type = "password";
+                    btn.textContent = "👁️";
+                }
+            });
+        });
+    </script>
+</body>
+</html>
