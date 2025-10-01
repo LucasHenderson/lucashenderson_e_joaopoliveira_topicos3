@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="~/css/administrator.css" asp-append-version="true">
 </head>
 <body>
-    <!-- Topbar -->
     <header class="topbar">
         <div class="logo">
             <a asp-controller="Administrator" asp-action="Index">
@@ -19,7 +18,7 @@
             </a>
         </div>
         <nav class="topbar-actions">
-            <a asp-controller="Administrator" asp-action="Orders" class="orders-btn">Pedidos e Reservas dos Clientes</a>
+            <a asp-controller="Administrator" asp-action="Orders" class="orders-btn">Pedidos e Reservas</a>
             <div class="user-menu">
                 <img src="~/imgs/user-icon.png" alt="Usuário" class="user-icon">
                 <div class="dropdown">
@@ -31,7 +30,6 @@
             </div>
         </nav>
     </header>
-    <!-- Conteúdo -->
     <div class="admin-container">
         <h1>Gerenciar Menu</h1>
         <button id="add-food-btn" class="add-btn">➕ Adicionar Nova Comida</button>

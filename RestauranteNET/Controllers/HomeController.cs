@@ -1,32 +1,28 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using RestauranteNET.Models;
 
 namespace RestauranteNET.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
-
         public IActionResult Index()
         {
-            return View();
+            // Se o usuário já estiver logado, redireciona conforme a role
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                if (User.IsInRole("Administrador"))
+                {
+                    return RedirectToAction("Index", "Administrator");
+                }
+                return RedirectToAction("Index", "Menu");
+            }
+
+            // Se não estiver logado, redireciona para a página de login
+            return RedirectToPage("/Account/Login", new { area = "Identity" });
         }
 
         public IActionResult Privacy()
         {
             return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }

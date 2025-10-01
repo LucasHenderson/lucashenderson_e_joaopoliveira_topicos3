@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace RestauranteNET.Controllers
 {
-    [Authorize(Roles = "Administrador")] // Só administradores acessam
+    [Authorize(Roles = "Administrador")] // Adiciona autorização
     public class AdministratorController : Controller
     {
         public IActionResult Index()

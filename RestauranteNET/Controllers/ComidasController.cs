@@ -1,12 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestauranteNET.Data;
 using RestauranteNET.Models;
 
 namespace RestauranteNET.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize] // Requer login
     [ApiController]
+    [Route("api/[controller]")]
     public class ComidasController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -24,6 +26,7 @@ namespace RestauranteNET.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administrador")] // Só admin cria
         public async Task<IActionResult> CreateComida(Comida comida)
         {
             _context.Comidas.Add(comida);
@@ -32,6 +35,7 @@ namespace RestauranteNET.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrador")] // Só admin edita
         public async Task<IActionResult> UpdateComida(int id, Comida comida)
         {
             var existing = await _context.Comidas.FindAsync(id);
@@ -48,6 +52,7 @@ namespace RestauranteNET.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Administrador")] // Só admin deleta
         public async Task<IActionResult> DeleteComida(int id)
         {
             var comida = await _context.Comidas.FindAsync(id);

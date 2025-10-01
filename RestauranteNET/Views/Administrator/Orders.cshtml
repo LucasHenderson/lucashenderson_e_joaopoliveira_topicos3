@@ -1,0 +1,63 @@
+﻿@{
+    ViewData["Title"] = "Pedidos e Reservas - Restaurant .NET";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/administrator_orders.css" asp-append-version="true">
+</head>
+<body>
+    <header class="topbar">
+        <div class="logo">
+            <a asp-controller="Administrator" asp-action="Index">
+                <img src="~/imgs/NET.png" alt="Logo">
+            </a>
+        </div>
+        <nav class="topbar-actions">
+            <div class="user-menu">
+                <img src="~/imgs/user-icon.png" alt="Usuário" class="user-icon">
+                <div class="dropdown">
+                    <a asp-area="Identity" asp-page="/Account/Manage/Index">Configurações</a>
+                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post" style="margin:0;">
+                        <button type="submit" style="background:none;border:none;color:#f5f5f5;padding:0.8rem;width:100%;text-align:left;cursor:pointer;">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="orders-container">
+        <section class="orders-section">
+            <div class="section-header">
+                <input type="date" id="filter-proprio" class="filter-date">
+                <h2>📦 Delivery Próprio</h2>
+                <span id="total-proprio" class="total-faturado">Total: R$0,00</span>
+            </div>
+            <ul id="list-proprio" class="order-list"></ul>
+            <div id="pagination-proprio" class="pagination"></div>
+        </section>
+        <section class="orders-section">
+            <div class="section-header">
+                <input type="date" id="filter-parceiro" class="filter-date">
+                <h2>🚚 Delivery Parceiro</h2>
+                <span id="total-parceiro" class="total-faturado">Total: R$0,00</span>
+            </div>
+            <ul id="list-parceiro" class="order-list"></ul>
+            <div id="pagination-parceiro" class="pagination"></div>
+        </section>
+        <section class="orders-section">
+            <div class="section-header">
+                <input type="date" id="filter-reservas" class="filter-date">
+                <h2>🍽️ Reservas</h2>
+                <span id="total-reservas" class="total-faturado">Total: R$0,00</span>
+            </div>
+            <ul id="list-reservas" class="order-list"></ul>
+            <div id="pagination-reservas" class="pagination"></div>
+        </section>
+    </div>
+    <script src="~/js/administrator_orders.js" asp-append-version="true"></script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+﻿@model IEnumerable<RestauranteNET.Models.Pedido>
+@{
+    ViewData["Title"] = "Meus Pedidos - Restaurant .NET";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/user_orders.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="logo">
+            <a asp-controller="Menu" asp-action="Index">
+                <img src="~/imgs/NET.png" alt="Logo">
+            </a>
+        </div>
+        <nav class="topbar-actions">
+            <div class="user-menu">
+                <img src="~/imgs/user-icon.png" alt="Usuário" class="user-icon" />
+                <div class="dropdown">
+                    <a asp-area="Identity" asp-page="/Account/Manage/Index">Configurações</a>
+                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post" style="margin:0;">
+                        <button type="submit" style="background:none;border:none;color:#f5f5f5;padding:0.8rem;width:100%;text-align:left;cursor:pointer;">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="orders-container">
+        <section class="orders-section">
+            <h2>📦 Delivery Próprio</h2>
+            <ul class="order-list">
+                @foreach (var pedido in Model.Where(p => p.Tipo == "proprio"))
+                {
+                    <li class="order-item">
+                        <div class="order-header">
+                            @foreach (var item in pedido.Itens)
+                            {
+                                <span>@item.Comida.Nome (@item.Quantidade) </span>
+                            }
+                        </div>
+                        <div class="order-details">Total: R$ @pedido.Total.ToString("F2")</div>
+                        <div class="order-details">Data: @pedido.Data.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="order-status">
+                            Status:
+                            @if (pedido.Status == "confirmed")
+                            {
+                                <span>✅ Confirmado</span>
+                            }
+                            else if (pedido.Status == "canceled")
+                            {
+
+                                <span>❌ Cancelado</span>
+                            }
+                            else
+                            {
+
+                                <span>⏳ Aguardando</span>
+                            }
+                        </div>
+                    </li>
+                }
+            </ul>
+        </section>
+
+        <section class="orders-section">
+            <h2>🚚 Delivery Parceiro</h2>
+            <ul class="order-list">
+                @foreach (var pedido in Model.Where(p => p.Tipo == "parceiro"))
+                {
+                    <li class="order-item">
+                        <div class="order-header">
+                            @foreach (var item in pedido.Itens)
+                            {
+                                <span>@item.Comida.Nome (@item.Quantidade) </span>
+                            }
+                        </div>
+                        <div class="order-details">Total: R$ @pedido.Total.ToString("F2")</div>
+                        <div class="order-details">Data: @pedido.Data.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="order-status">
+                            Status:
+                            @if (pedido.Status == "confirmed")
+                            {
+                                <span>✅ Confirmado</span>
+                            }
+                            else if (pedido.Status == "canceled")
+                            {
+
+                                <span>❌ Cancelado</span>
+                            }
+                            else
+                            {
+
+                                <span>⏳ Aguardando</span>
+                            }
+                        </div>
+                    </li>
+                }
+            </ul>
+        </section>
+
+        <section class="orders-section">
+            <h2>🍽️ Reservas</h2>
+            <ul class="order-list">
+                @foreach (var reserva in Model.OfType<RestauranteNET.Models.Reserva>())
+                {
+                    <li class="order-item">
+                        <div class="order-header">Reserva - Mesa</div>
+                        <div class="order-details">Data: @reserva.Data.ToString("dd/MM/yyyy")</div>
+                        <div class="order-details">Horário: @reserva.Horario</div>
+                        <div class="order-details">Total: R$ @reserva.Total.ToString("F2")</div>
+                        <div class="order-status">
+                            Status:
+                            @if (reserva.Status == "confirmed")
+                            {
+                                <span>✅ Confirmado</span>
+                            }
+                            else if (reserva.Status == "canceled")
+                            {
+
+                                <span>❌ Cancelado</span>
+                            }
+                            else
+                            {
+
+                                <span>⏳ Aguardando</span>
+                            }
+                        </div>
+                    </li>
+                }
+            </ul>
+        </section>
+    </div>
+</body>
+</html>

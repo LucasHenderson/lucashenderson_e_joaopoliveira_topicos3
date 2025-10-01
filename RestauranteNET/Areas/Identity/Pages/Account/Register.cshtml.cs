@@ -83,7 +83,7 @@ namespace RestauranteNET.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/Menu/Index");
+            returnUrl ??= Url.Content("~/Menu/Index"); // Redireciona para Menu após registro
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
             if (ModelState.IsValid)
@@ -110,7 +110,7 @@ namespace RestauranteNET.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("Usuário criou uma nova conta com senha.");
 
-                    // Adiciona role Cliente
+                    // ADICIONE ESTA LINHA
                     await _userManager.AddToRoleAsync(user, "Cliente");
 
                     await _signInManager.SignInAsync(user, isPersistent: false);
