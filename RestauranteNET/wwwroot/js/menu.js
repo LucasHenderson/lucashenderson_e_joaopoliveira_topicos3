@@ -1,137 +1,284 @@
-// --- Dropdown Usuário ---
-const userMenu = document.querySelector(".user-menu");
 const userIcon = document.querySelector(".user-icon");
-userIcon.addEventListener("click", () => {
-  userMenu.classList.toggle("active");
-});
+const userMenu = document.querySelector(".user-menu");
 
-// --- Controle de Quantidade ---
-document.querySelectorAll(".food-item").forEach(item => {
-  const decreaseBtn = item.querySelector(".decrease");
-  const increaseBtn = item.querySelector(".increase");
-  const quantityEl = item.querySelector(".quantity");
-  let quantity = 0;
-
-  decreaseBtn.addEventListener("click", () => {
-    if (quantity > 0) {
-      quantity--;
-      quantityEl.textContent = quantity;
-      updateTotal();
-    }
-  });
-
-  increaseBtn.addEventListener("click", () => {
-    if (quantity < 10) { // 🔹 limite de 10 unidades
-      quantity++;
-      quantityEl.textContent = quantity;
-      updateTotal();
-    } else {
-      alert("⚠️ Limite máximo de 10 unidades por item.");
-    }
-  });
-});
-
-// --- Opções de Serviço ---
-let serviceType = null;
-const serviceBtns = document.querySelectorAll(".service-btn");
-const reservationDiv = document.querySelector(".reservation");
-const reservaMsg = document.querySelector(".reserva-msg");
-const reservationBtns = document.querySelectorAll(".reservation-btn");
-const reservations = {19:0, 20:0, 21:0, 22:0}; // controle máx 5 reservas
-let selectedReservation = null;
-
-serviceBtns.forEach(btn => {
-  btn.addEventListener("click", () => {
-    serviceType = btn.dataset.type;
-
-    // Marca botão ativo
-    serviceBtns.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-
-    reservationDiv.classList.add("hidden");
-    reservaMsg.textContent = "";
-    selectedReservation = null;
-
-    if (serviceType === "reserva") {
-      reservationDiv.classList.remove("hidden");
-    }
-
-    updateTotal();
-  });
-});
-
-// --- Atualização do Total ---
-function updateTotal() {
-  let total = 0;
-
-  document.querySelectorAll(".food-item").forEach(item => {
-    const quantity = parseInt(item.querySelector(".quantity").textContent);
-    if (quantity > 0) {
-      let price = parseFloat(item.dataset.price);
-      if (item.dataset.discount) {
-        const discount = parseInt(item.dataset.discount);
-        price = price - (price * discount / 100);
-      }
-      total += price * quantity;
-    }
-  });
-
-  // Taxas de serviço
-  if (serviceType === "proprio") total += 15;
-  if (serviceType === "parceiro") total += 5;
-  if (serviceType === "reserva") total += 10;
-
-  document.getElementById("total").textContent = total.toFixed(2).replace(".", ",");
+if (userIcon && userMenu) {
+    userIcon.addEventListener("click", () => {
+        userMenu.classList.toggle("active");
+    });
 }
 
-// --- Reservas ---
-reservationBtns.forEach(btn => {
-  btn.addEventListener("click", () => {
-    const time = btn.dataset.time;
+const chefList = document.getElementById("chef-list");
+const menuList = document.getElementById("menu-list");
+const totalEl = document.getElementById("total");
+const confirmBtn = document.getElementById("confirm-order");
 
-    // Desmarca todos os botões
-    reservationBtns.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
+let carrinho = {};
+let serviceType = null;
+let selectedReservation = null;
+let todasComidas = [];
 
-    if (reservations[time] >= 5) {
-      reservaMsg.textContent = "❌ Horário esgotado.";
-      reservaMsg.style.color = "red";
-      btn.classList.remove("active");
-      selectedReservation = null;
-    } else {
-      reservations[time]++;
-      selectedReservation = time;
-      reservaMsg.textContent = `✅ Reserva confirmada para ${time}:00`;
-      reservaMsg.style.color = "lightgreen";
-      updateTotal();
+async function loadComidas() {
+    try {
+        const response = await fetch('/api/comidas');
+        if (!response.ok) {
+            console.error('Erro ao carregar comidas');
+            return;
+        }
+
+        todasComidas = await response.json();
+        const comidasChef = todasComidas.filter(c => c.chef);
+        const comidasNormais = todasComidas.filter(c => !c.chef);
+
+        renderComidas(chefList, comidasChef, true);
+        renderComidas(menuList, comidasNormais, false);
+    } catch (error) {
+        console.error('Erro:', error);
     }
-  });
+}
+
+function renderComidas(container, comidas, isChef) {
+    container.innerHTML = '';
+
+    comidas.forEach(comida => {
+        const div = document.createElement('div');
+        div.classList.add('food-item');
+        if (isChef) div.classList.add('chef');
+
+        const preco = isChef ? comida.preco * 0.8 : comida.preco;
+        const precoOriginal = isChef ? `<span class="discount">R$ ${comida.preco.toFixed(2)}</span>` : '';
+
+        div.innerHTML = `
+            <img src="${comida.imgUrl || '/imgs/img-null.png'}" alt="${comida.nome}">
+            <h3>${comida.nome}</h3>
+            <p>${comida.descricao}</p>
+            <div class="price">
+                ${precoOriginal}
+                R$ ${preco.toFixed(2)}
+            </div>
+            <div class="quantity-control">
+                <button class="decrease" data-id="${comida.id}">-</button>
+                <span class="quantity" data-id="${comida.id}">0</span>
+                <button class="increase" data-id="${comida.id}" data-preco="${preco}" data-preco-original="${comida.preco}" data-chef="${isChef}">+</button>
+            </div>
+        `;
+
+        const increaseBtn = div.querySelector('.increase');
+        const decreaseBtn = div.querySelector('.decrease');
+
+        increaseBtn.addEventListener('click', () => {
+            const id = parseInt(increaseBtn.dataset.id);
+            const precoAtual = parseFloat(increaseBtn.dataset.preco);
+            const precoOrig = parseFloat(increaseBtn.dataset.precoOriginal);
+            const ehChef = increaseBtn.dataset.chef === 'true';
+
+            if (!carrinho[id]) {
+                carrinho[id] = {
+                    quantidade: 0,
+                    preco: precoAtual,
+                    precoOriginal: precoOrig,
+                    isChef: ehChef
+                };
+            }
+
+            if (carrinho[id].quantidade < 10) {
+                carrinho[id].quantidade++;
+                updateQuantity(id);
+                updateTotal();
+            } else {
+                alert('⚠️ Limite máximo de 10 unidades por item.');
+            }
+        });
+
+        decreaseBtn.addEventListener('click', () => {
+            const id = parseInt(decreaseBtn.dataset.id);
+            if (carrinho[id] && carrinho[id].quantidade > 0) {
+                carrinho[id].quantidade--;
+                updateQuantity(id);
+                updateTotal();
+            }
+        });
+
+        container.appendChild(div);
+    });
+}
+
+function updateQuantity(id) {
+    const quantityEls = document.querySelectorAll(`.quantity[data-id="${id}"]`);
+    quantityEls.forEach(el => {
+        el.textContent = carrinho[id]?.quantidade || 0;
+    });
+}
+
+function updateTotal() {
+    let subtotal = 0;
+    let descontoTotal = 0;
+
+    Object.entries(carrinho).forEach(([id, item]) => {
+        if (item.quantidade > 0) {
+            subtotal += item.preco * item.quantidade;
+            if (item.isChef) {
+                descontoTotal += (item.precoOriginal - item.preco) * item.quantidade;
+            }
+        }
+    });
+
+    let taxa = 0;
+    if (serviceType === 'proprio') taxa = 15;
+    if (serviceType === 'parceiro') taxa = 5;
+    if (serviceType === 'reserva') taxa = 10;
+
+    const total = subtotal + taxa;
+
+    const summarySection = document.querySelector('.order-summary');
+    summarySection.innerHTML = `
+        <h2>Resumo do Pedido</h2>
+        <div style="text-align:left; max-width:400px; margin:0 auto 1.5rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                <span>Subtotal:</span>
+                <span>R$ ${(subtotal + descontoTotal).toFixed(2)}</span>
+            </div>
+            ${descontoTotal > 0 ? `
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; color:#71100f;">
+                <span>Desconto (Chef):</span>
+                <span>- R$ ${descontoTotal.toFixed(2)}</span>
+            </div>
+            ` : ''}
+            ${taxa > 0 ? `
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                <span>Taxa de serviço:</span>
+                <span>R$ ${taxa.toFixed(2)}</span>
+            </div>
+            ` : ''}
+            ${serviceType === 'reserva' && selectedReservation ? `
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                <span>Horário da reserva:</span>
+                <span>${selectedReservation}:00</span>
+            </div>
+            ` : ''}
+            <hr style="border:1px solid #444; margin:0.5rem 0;">
+            <div style="display:flex; justify-content:space-between; font-size:1.3rem; font-weight:bold; color:#71100f;">
+                <span>Total:</span>
+                <span>R$ ${total.toFixed(2)}</span>
+            </div>
+        </div>
+        <button id="confirm-order" class="confirm-btn">Confirmar Pedido</button>
+    `;
+
+    document.getElementById('confirm-order').addEventListener('click', confirmarPedido);
+}
+
+const serviceBtns = document.querySelectorAll('.service-btn');
+serviceBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        serviceType = btn.dataset.type;
+
+        serviceBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const reservationDiv = document.getElementById('reservation-times');
+        if (serviceType === 'reserva' && reservationDiv) {
+            reservationDiv.classList.remove('hidden');
+        } else if (reservationDiv) {
+            reservationDiv.classList.add('hidden');
+            selectedReservation = null; // Resetar horário quando não for reserva
+            const reservaMsg = document.querySelector('.reserva-msg');
+            if (reservaMsg) {
+                reservaMsg.textContent = '';
+            }
+        }
+
+        updateTotal();
+    });
 });
 
-// --- Confirmar Pedido ---
-document.querySelector(".confirm-btn").addEventListener("click", () => {
-  // Verifica se tem ao menos 1 comida
-  let totalItens = 0;
-  document.querySelectorAll(".food-item .quantity").forEach(el => {
-    totalItens += parseInt(el.textContent);
-  });
+const reservationBtns = document.querySelectorAll('.reservation-btn');
+const reservaMsg = document.querySelector('.reserva-msg');
 
-  if (totalItens === 0) {
-    alert("⚠️ Selecione ao menos 1 comida para confirmar o pedido.");
-    return;
-  }
+reservationBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const time = btn.dataset.time;
 
-  // Verifica se escolheu opção de entrega/reserva
-  if (!serviceType) {
-    alert("⚠️ Selecione uma opção de entrega ou reserva.");
-    return;
-  }
+        reservationBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
 
-  // Se for reserva, precisa ter horário selecionado
-  if (serviceType === "reserva" && !selectedReservation) {
-    alert("⚠️ Escolha um horário para a reserva.");
-    return;
-  }
+        selectedReservation = time;
 
-  alert("✅ Pedido confirmado! Obrigado por escolher o Restaurant .NET 🍽️");
+        if (reservaMsg) {
+            reservaMsg.textContent = `✅ Horário selecionado: ${time}:00`;
+            reservaMsg.style.color = 'lightgreen';
+        }
+
+        updateTotal(); // Atualizar o resumo para mostrar o horário
+    });
 });
+
+function confirmarPedido() {
+    const totalItens = Object.values(carrinho).reduce((sum, item) => sum + item.quantidade, 0);
+
+    if (totalItens === 0) {
+        alert('⚠️ Selecione ao menos 1 item para confirmar o pedido.');
+        return;
+    }
+
+    if (!serviceType) {
+        alert('⚠️ Selecione uma opção de entrega ou reserva.');
+        return;
+    }
+
+    if (serviceType === 'reserva' && !selectedReservation) {
+        alert('⚠️ Escolha um horário para a reserva.');
+        return;
+    }
+
+    const itens = Object.entries(carrinho)
+        .filter(([id, item]) => item.quantidade > 0)
+        .map(([id, item]) => ({
+            comidaId: parseInt(id),
+            quantidade: item.quantidade,
+            precoUnitario: item.preco
+        }));
+
+    const subtotal = Object.entries(carrinho).reduce((sum, [id, item]) => {
+        return sum + (item.preco * item.quantidade);
+    }, 0);
+
+    const taxa = serviceType === 'proprio' ? 15 : serviceType === 'parceiro' ? 5 : 10;
+    const total = subtotal + taxa;
+
+    const pedido = {
+        tipo: serviceType,
+        total: total,
+        itens: itens,
+        horario: serviceType === 'reserva' ? selectedReservation : null // Incluir horário apenas para reservas
+    };
+
+    console.log('===== DEBUG PEDIDO ENVIADO =====');
+    console.log('Tipo:', pedido.tipo);
+    console.log('Horario:', pedido.horario);
+    console.log('Total:', pedido.total);
+    console.log('Itens:', pedido.itens);
+    console.log('============================');
+
+    fetch('/api/pedidos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pedido)
+    })
+        .then(response => {
+            if (response.ok) {
+                alert('✅ Pedido confirmado com sucesso!');
+                location.reload();
+            } else {
+                response.json().then(data => {
+                    console.error('Erro do servidor:', data);
+                    alert('❌ Erro ao confirmar pedido: ' + (data.error || 'Tente novamente.'));
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('❌ Erro ao confirmar pedido.');
+        });
+}
+
+loadComidas();

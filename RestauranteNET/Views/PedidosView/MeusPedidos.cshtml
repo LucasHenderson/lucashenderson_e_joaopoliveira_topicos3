@@ -54,12 +54,10 @@
                             }
                             else if (pedido.Status == "canceled")
                             {
-
                                 <span>❌ Cancelado</span>
                             }
                             else
                             {
-
                                 <span>⏳ Aguardando</span>
                             }
                         </div>
@@ -90,12 +88,10 @@
                             }
                             else if (pedido.Status == "canceled")
                             {
-
                                 <span>❌ Cancelado</span>
                             }
                             else
                             {
-
                                 <span>⏳ Aguardando</span>
                             }
                         </div>
@@ -107,27 +103,33 @@
         <section class="orders-section">
             <h2>🍽️ Reservas</h2>
             <ul class="order-list">
-                @foreach (var reserva in Model.OfType<RestauranteNET.Models.Reserva>())
+                @foreach (var pedido in Model.Where(p => p.Tipo == "reserva"))
                 {
                     <li class="order-item">
-                        <div class="order-header">Reserva - Mesa</div>
-                        <div class="order-details">Data: @reserva.Data.ToString("dd/MM/yyyy")</div>
-                        <div class="order-details">Horário: @reserva.Horario</div>
-                        <div class="order-details">Total: R$ @reserva.Total.ToString("F2")</div>
+                        <div class="order-header">
+                            @foreach (var item in pedido.Itens)
+                            {
+                                <span>@item.Comida.Nome (@item.Quantidade) </span>
+                            }
+                        </div>
+                        <div class="order-details">Total: R$ @pedido.Total.ToString("F2")</div>
+                        <div class="order-details">Data: @pedido.Data.ToString("dd/MM/yyyy")</div>
+                        @if (!string.IsNullOrEmpty(pedido.Horario))
+                        {
+                            <div class="order-details">Horário: @pedido.Horario</div>
+                        }
                         <div class="order-status">
                             Status:
-                            @if (reserva.Status == "confirmed")
+                            @if (pedido.Status == "confirmed")
                             {
                                 <span>✅ Confirmado</span>
                             }
-                            else if (reserva.Status == "canceled")
+                            else if (pedido.Status == "canceled")
                             {
-
                                 <span>❌ Cancelado</span>
                             }
                             else
                             {
-
                                 <span>⏳ Aguardando</span>
                             }
                         </div>
@@ -136,5 +138,14 @@
             </ul>
         </section>
     </div>
+    <script>
+        const userMenu = document.querySelector(".user-menu");
+        const userIcon = document.querySelector(".user-icon");
+        if (userIcon && userMenu) {
+            userIcon.addEventListener("click", () => {
+                userMenu.classList.toggle("active");
+            });
+        }
+    </script>
 </body>
 </html>

@@ -21,21 +21,74 @@ namespace RestauranteNET.Controllers
             _userManager = userManager;
         }
 
-        // Criar pedido
-        [HttpPost]
-        public async Task<IActionResult> CreatePedido(Pedido pedido)
+        // DTOs
+        public class PedidoDto
         {
-            // Pega o usuário logado
-            var user = await _userManager.GetUserAsync(User);
-            pedido.ClienteId = user.Id;
-            pedido.Data = DateTime.Now;
-
-            _context.Pedidos.Add(pedido);
-            await _context.SaveChangesAsync();
-            return Ok(pedido);
+            public string Tipo { get; set; } = string.Empty;
+            public string? Horario { get; set; } // Horário da reserva (opcional)
+            public decimal Total { get; set; }
+            public List<ItemPedidoDto> Itens { get; set; } = new List<ItemPedidoDto>();
         }
 
-        // Pedidos do usuário logado
+        public class ItemPedidoDto
+        {
+            public int ComidaId { get; set; }
+            public int Quantidade { get; set; }
+            public decimal PrecoUnitario { get; set; }
+        }
+
+        // Criar pedido
+        [HttpPost]
+        public async Task<IActionResult> CreatePedido([FromBody] PedidoDto dto)
+        {
+            try
+            {
+                if (dto == null || dto.Itens == null || !dto.Itens.Any())
+                    return BadRequest("Pedido inválido");
+
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized();
+
+                var pedido = new Pedido
+                {
+                    ClienteId = user.Id,
+                    Data = DateTime.Now,
+                    Tipo = dto.Tipo,
+                    Horario = dto.Tipo == "reserva" ? dto.Horario : null, // Salvar horário apenas para reservas
+                    Total = dto.Total,
+                    Status = "pending",
+                    Itens = dto.Itens.Select(i => new ItemPedido
+                    {
+                        ComidaId = i.ComidaId,
+                        Quantidade = i.Quantidade,
+                        PrecoUnitario = i.PrecoUnitario
+                    }).ToList()
+                };
+
+                _context.Pedidos.Add(pedido);
+                await _context.SaveChangesAsync();
+
+                // Adicionar log para verificar o pedido criado
+                Console.WriteLine($"===== DEBUG PEDIDO CRIADO =====");
+                Console.WriteLine($"Pedido ID: {pedido.Id}");
+                Console.WriteLine($"Cliente ID: {pedido.ClienteId}");
+                Console.WriteLine($"Tipo: {pedido.Tipo}");
+                Console.WriteLine($"Horario: {pedido.Horario ?? "N/A"}");
+                Console.WriteLine($"Total: {pedido.Total}");
+                Console.WriteLine($"Itens: {pedido.Itens.Count}");
+                Console.WriteLine($"==============================");
+
+                return Ok(new { message = "Pedido criado com sucesso", id = pedido.Id });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao criar pedido: {ex.Message}");
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        // Resto do código permanece igual...
         [HttpGet("meus")]
         public async Task<IActionResult> GetMeusPedidos()
         {
@@ -50,7 +103,6 @@ namespace RestauranteNET.Controllers
             return Ok(pedidos);
         }
 
-        // Todos os pedidos (apenas admin)
         [HttpGet("all")]
         [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> GetAllPedidos()
@@ -64,7 +116,6 @@ namespace RestauranteNET.Controllers
             return Ok(pedidos);
         }
 
-        // Atualizar status (apenas admin)
         [HttpPut("{id}/status")]
         [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)

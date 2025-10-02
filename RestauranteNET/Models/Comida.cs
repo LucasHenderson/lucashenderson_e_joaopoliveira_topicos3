@@ -6,7 +6,7 @@
         public string Nome { get; set; } = string.Empty;
         public string Descricao { get; set; } = string.Empty;
         public decimal Preco { get; set; }
-        public bool Chef { get; set; }  // Sugestão do Chefe
-        public string? ImgUrl { get; set; }
+        public bool Chef { get; set; }
+        public string ImgUrl { get; set; } = string.Empty;
     }
 }

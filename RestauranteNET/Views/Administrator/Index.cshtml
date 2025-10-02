@@ -35,6 +35,44 @@
         <button id="add-food-btn" class="add-btn">➕ Adicionar Nova Comida</button>
         <ul id="food-list" class="food-list"></ul>
         <div id="pagination" class="pagination"></div>
+
+        <!-- Modal para nova comida -->
+        <div id="add-food-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h2>Adicionar Nova Comida</h2>
+                <form id="add-food-form">
+                    <div class="form-group">
+                        <label for="food-name">Nome *</label>
+                        <input type="text" id="food-name" required>
+                        <p class="error-message" id="food-name-error"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="food-description">Descrição</label>
+                        <textarea id="food-description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="food-price">Preço *</label>
+                        <div class="price-input-container">
+                            <span class="currency">R$</span>
+                            <input type="text" id="food-price" placeholder="0,00" required>
+                        </div>
+                        <p class="error-message" id="food-price-error"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="food-chef">Recomendação do Chef</label>
+                        <input type="checkbox" id="food-chef">
+                    </div>
+                    <div class="form-group">
+                        <label for="food-image">Imagem</label>
+                        <input type="file" id="food-image" accept="image/png,image/jpeg,image/jpg">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="save-btn">Salvar</button>
+                        <button type="button" id="cancel-add-food" class="cancel-btn">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
     <script src="~/js/administrator.js" asp-append-version="true"></script>
 </body>

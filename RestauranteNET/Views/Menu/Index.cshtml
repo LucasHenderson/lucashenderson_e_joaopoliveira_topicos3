@@ -44,6 +44,7 @@
             <div id="menu-list" class="food-list"></div>
         </section>
 
+        <!-- Opções de Serviço (UMA VEZ SÓ) -->
         <section class="service-section">
             <h2>Escolha o tipo de serviço</h2>
             <div class="service-options">
@@ -51,17 +52,33 @@
                 <button class="service-btn" data-type="parceiro">🚚 Delivery Parceiro (+ R$5)</button>
                 <button class="service-btn" data-type="reserva">🍽️ Reservar Mesa (+ R$10)</button>
             </div>
+
+            <!-- Horários de Reserva -->
+            <div id="reservation-times" class="reservation hidden">
+                <h3>Escolha o horário da reserva (19h-22h):</h3>
+                <div class="reservation-options">
+                    <button class="reservation-btn" data-time="19">19:00</button>
+                    <button class="reservation-btn" data-time="20">20:00</button>
+                    <button class="reservation-btn" data-time="21">21:00</button>
+                    <button class="reservation-btn" data-time="22">22:00</button>
+                </div>
+                <p class="reserva-msg"></p>
+            </div>
         </section>
 
+        <!-- Total e Confirmar -->
         <section class="order-summary">
-            <h2>Total: R$ <span id="total">0,00</span></h2>
+            <h2>Resumo do Pedido</h2>
+            <div style="text-align:left; max-width:400px; margin:0 auto 1.5rem;">
+                <div style="display:flex; justify-content:space-between; font-size:1.3rem; font-weight:bold; color:#71100f;">
+                    <span>Total:</span>
+                    <span>R$ <span id="total">0,00</span></span>
+                </div>
+            </div>
             <button id="confirm-order" class="confirm-btn">Confirmar Pedido</button>
         </section>
     </div>
 
-    <script>
-        const comidas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
-    </script>
     <script src="~/js/menu.js" asp-append-version="true"></script>
 </body>
 </html>

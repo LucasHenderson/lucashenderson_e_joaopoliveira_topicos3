@@ -1,4 +1,3 @@
-// --- Dropdown Usuário ---
 const userMenu = document.querySelector(".user-menu");
 const userIcon = document.querySelector(".user-icon");
 if (userIcon) {
@@ -7,33 +6,39 @@ if (userIcon) {
     });
 }
 
-// --- Lista de comidas ---
 let comidas = [];
-
 const foodList = document.getElementById("food-list");
 const addFoodBtn = document.getElementById("add-food-btn");
 const paginationEl = document.getElementById("pagination");
+const addFoodModal = document.getElementById("add-food-modal");
+const addFoodForm = document.getElementById("add-food-form");
+const cancelAddFoodBtn = document.getElementById("cancel-add-food");
+const addFoodError = document.getElementById("add-food-error");
 
-// --- Paginação ---
 let currentPage = 1;
 const itemsPerPage = 5;
 
-// --- Carregar comidas do backend ---
 async function loadComidas() {
     try {
         const response = await fetch('/api/comidas');
         if (response.ok) {
             comidas = await response.json();
             renderComidas();
+        } else {
+            alert('Erro ao carregar comidas. Tente novamente.');
         }
     } catch (error) {
         console.error('Erro ao carregar comidas:', error);
+        alert('Erro ao carregar comidas. Tente novamente.');
     }
 }
 
-// --- Salvar comida no backend ---
 async function saveComida(comida) {
     try {
+        if (!comida.nome || comida.preco <= 0) {
+            throw new Error('Nome e preço são obrigatórios.');
+        }
+
         const url = comida.id ? `/api/comidas/${comida.id}` : '/api/comidas';
         const method = comida.id ? 'PUT' : 'POST';
 
@@ -46,19 +51,32 @@ async function saveComida(comida) {
                 descricao: comida.descricao,
                 preco: comida.preco,
                 chef: comida.chef,
-                imgUrl: comida.imgUrl
+                imgUrl: comida.imgUrl || '/imgs/img-null.png'
             })
         });
 
         if (response.ok) {
-            return await response.json();
+            const savedComida = await response.json();
+            if (!comida.id) {
+                comidas.push(savedComida);
+            } else {
+                const index = comidas.findIndex(c => c.id === comida.id);
+                if (index !== -1) {
+                    comidas[index] = savedComida;
+                }
+            }
+            renderComidas();
+            return savedComida;
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erro ao salvar comida.');
         }
     } catch (error) {
         console.error('Erro ao salvar comida:', error);
+        throw error;
     }
 }
 
-// --- Deletar comida ---
 async function deleteComida(id) {
     try {
         const response = await fetch(`/api/comidas/${id}`, {
@@ -68,50 +86,56 @@ async function deleteComida(id) {
         if (response.ok) {
             comidas = comidas.filter(c => c.id !== id);
             renderComidas();
+            alert('Comida deletada com sucesso!');
+        } else {
+            throw new Error('Erro ao deletar comida.');
         }
     } catch (error) {
         console.error('Erro ao deletar comida:', error);
+        alert('Erro ao deletar comida: ' + error.message);
     }
 }
 
-// --- Renderizar lista ---
 function renderComidas() {
     foodList.innerHTML = "";
-
-    // Cálculo de paginação
     const totalPages = Math.ceil(comidas.length / itemsPerPage);
     if (currentPage > totalPages) currentPage = totalPages || 1;
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     const pageItems = comidas.slice(start, end);
 
-    // Renderizar comidas da página atual
     pageItems.forEach(comida => {
         const li = document.createElement("li");
         li.classList.add("food-item");
+        if (comida.isNew) {
+            li.classList.add("new");
+            delete comida.isNew; // Remove flag após renderizar
+        }
 
         li.innerHTML = `
-      <img src="${comida.imgUrl || '/imgs/img-null.png'}" alt="${comida.nome}">
-      <div class="food-details">
-        <input type="text" value="${comida.nome}" placeholder="Nome da comida" data-field="nome">
-        <textarea rows="2" placeholder="Descrição da comida" data-field="descricao">${comida.descricao}</textarea>
-        <input type="number" step="0.01" min="0" value="${comida.preco}" data-field="preco">
-      </div>
-      <div class="food-actions">
-        <button class="save-btn">💾</button>
-        <button class="delete-btn">🗑</button>
-        <button class="chef-btn ${comida.chef ? "active" : ""}">👨‍🍳</button>
-      </div>
-    `;
+            <img src="${comida.imgUrl || '/imgs/img-null.png'}" alt="${comida.nome}">
+            <div class="food-details">
+                <input type="text" value="${comida.nome}" placeholder="Nome da comida" data-field="nome">
+                <textarea rows="2" placeholder="Descrição da comida" data-field="descricao">${comida.descricao}</textarea>
+                <input type="number" step="0.01" min="0" value="${comida.preco}" data-field="preco">
+            </div>
+            <div class="food-actions">
+                <button class="save-btn">💾</button>
+                <button class="delete-btn">🗑</button>
+                <button class="chef-btn ${comida.chef ? "active" : ""}">👨‍🍳</button>
+            </div>
+        `;
 
-        // Botão salvar
         const saveBtn = li.querySelector(".save-btn");
         saveBtn.addEventListener("click", async () => {
-            await saveComida(comida);
-            alert('Comida salva com sucesso!');
+            try {
+                await saveComida(comida);
+                alert('Comida salva com sucesso!');
+            } catch (error) {
+                alert('Erro ao salvar comida: ' + error.message);
+            }
         });
 
-        // Botão deletar
         const deleteBtn = li.querySelector(".delete-btn");
         deleteBtn.addEventListener("click", async () => {
             if (confirm('Deseja realmente deletar esta comida?')) {
@@ -119,15 +143,18 @@ function renderComidas() {
             }
         });
 
-        // Botão chef
         const chefBtn = li.querySelector(".chef-btn");
         chefBtn.addEventListener("click", async () => {
             comida.chef = !comida.chef;
             chefBtn.classList.toggle("active");
-            await saveComida(comida);
+            try {
+                await saveComida(comida);
+                alert('Status de Chef atualizado!');
+            } catch (error) {
+                alert('Erro ao atualizar status de Chef: ' + error.message);
+            }
         });
 
-        // Atualizar valores localmente
         const nomeInput = li.querySelector('[data-field="nome"]');
         const descInput = li.querySelector('[data-field="descricao"]');
         const precoInput = li.querySelector('[data-field="preco"]');
@@ -144,21 +171,34 @@ function renderComidas() {
             }
         });
 
-        // Clique na imagem para trocar (base64 para simplificar)
         const imgEl = li.querySelector("img");
         imgEl.addEventListener("click", () => {
             const fileInput = document.createElement("input");
             fileInput.type = "file";
-            fileInput.accept = "image/png, image/jpeg, image/jpg";
-            fileInput.onchange = e => {
+            fileInput.accept = "image/png,image/jpeg,image/jpg";
+            fileInput.onchange = async e => {
                 const file = e.target.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        comida.imgUrl = reader.result;
-                        imgEl.src = reader.result;
-                    };
-                    reader.readAsDataURL(file);
+                    try {
+                        const formData = new FormData();
+                        formData.append("file", file);
+                        const response = await fetch('/api/comidas/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            comida.imgUrl = data.url;
+                            imgEl.src = data.url;
+                            await saveComida(comida);
+                            alert('Imagem atualizada com sucesso!');
+                        } else {
+                            throw new Error('Erro ao fazer upload da imagem.');
+                        }
+                    } catch (error) {
+                        console.error('Erro ao fazer upload da imagem:', error);
+                        alert('Erro ao fazer upload da imagem: ' + error.message);
+                    }
                 }
             };
             fileInput.click();
@@ -167,7 +207,6 @@ function renderComidas() {
         foodList.appendChild(li);
     });
 
-    // Renderizar paginação
     paginationEl.innerHTML = "";
     if (totalPages > 1) {
         const prevBtn = document.createElement("button");
@@ -191,19 +230,66 @@ function renderComidas() {
     }
 }
 
-// --- Adicionar nova comida ---
 addFoodBtn.addEventListener("click", () => {
-    const nova = {
-        id: 0, // 0 indica que é nova
-        imgUrl: "/imgs/img-null.png",
-        nome: "",
-        descricao: "",
-        preco: 0,
-        chef: false
-    };
-    comidas.push(nova);
-    renderComidas();
+    addFoodModal.style.display = 'flex';
 });
 
-// --- Inicializa carregando do backend ---
+cancelAddFoodBtn.addEventListener("click", () => {
+    addFoodModal.style.display = 'none';
+    addFoodForm.reset();
+    addFoodError.style.display = 'none';
+});
+
+addFoodForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    const name = document.getElementById("food-name").value.trim();
+    const description = document.getElementById("food-description").value.trim();
+    const price = parseFloat(document.getElementById("food-price").value);
+    const chef = document.getElementById("food-chef").checked;
+    const file = document.getElementById("food-image").files[0];
+
+    try {
+        if (!name || price <= 0) {
+            addFoodError.textContent = 'Nome e preço são obrigatórios.';
+            addFoodError.style.display = 'block';
+            return;
+        }
+
+        let imgUrl = '/imgs/img-null.png';
+        if (file) {
+            const formData = new FormData();
+            formData.append("file", file);
+            const response = await fetch('/api/comidas/upload', {
+                method: 'POST',
+                body: formData
+            });
+            if (response.ok) {
+                const data = await response.json();
+                imgUrl = data.url;
+            } else {
+                throw new Error('Erro ao fazer upload da imagem.');
+            }
+        }
+
+        const novaComida = {
+            id: 0,
+            nome: name,
+            descricao: description,
+            preco: price,
+            chef: chef,
+            imgUrl: imgUrl,
+            isNew: true
+        };
+
+        await saveComida(novaComida);
+        addFoodModal.style.display = 'none';
+        addFoodForm.reset();
+        addFoodError.style.display = 'none';
+        alert('Comida adicionada com sucesso!');
+    } catch (error) {
+        addFoodError.textContent = 'Erro ao adicionar comida: ' + error.message;
+        addFoodError.style.display = 'block';
+    }
+});
+
 loadComidas();
