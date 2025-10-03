@@ -1,0 +1,243 @@
+﻿@page
+@model IndexModel
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<RestauranteNET.Models.Usuario> UserManager
+@{
+    ViewData["Title"] = "Configurações - Restaurant .NET";
+    Layout = null;
+    var user = await UserManager.GetUserAsync(User);
+    var isAdmin = user != null && await UserManager.IsInRoleAsync(user, "Administrador");
+}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/manage.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="logo">
+            @if (isAdmin)
+            {
+                <a asp-controller="Administrator" asp-action="Index">
+                    <img src="~/imgs/NET.png" alt="Logo">
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Menu" asp-action="Index">
+                    <img src="~/imgs/NET.png" alt="Logo">
+                </a>
+            }
+        </div>
+        <nav class="topbar-actions">
+            @if (isAdmin)
+            {
+                <a asp-controller="Administrator" asp-action="Orders" class="orders-btn">Pedidos e Reservas</a>
+            }
+            else
+            {
+                <a asp-controller="PedidosView" asp-action="MeusPedidos" class="orders-btn">Meus Pedidos</a>
+            }
+            <div class="user-menu">
+                <img src="~/imgs/user-icon.png" alt="Usuário" class="user-icon" />
+                <div class="dropdown">
+                    <a asp-area="Identity" asp-page="/Account/Manage/Index">Configurações</a>
+                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post" style="margin:0;">
+                        <button type="submit" style="background:none;border:none;color:#f5f5f5;padding:0.8rem;width:100%;text-align:left;cursor:pointer;">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="manage-container">
+        <h1>⚙️ Configurações da Conta</h1>
+
+        @if (Model.StatusMessage != null)
+        {
+            <div class="alert @(Model.StatusMessage.Contains("sucesso") || Model.StatusMessage.Contains("✅") ? "alert-success" : "alert-error")">
+                @Model.StatusMessage
+            </div>
+        }
+
+        <div class="profile-card">
+            <h2>Informações Pessoais</h2>
+            <form method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group">
+                    <label asp-for="Input.NomeCompleto"></label>
+                    <input asp-for="Input.NomeCompleto" class="form-control" />
+                    <span asp-validation-for="Input.NomeCompleto" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Input.Email"></label>
+                    <input asp-for="Input.Email" class="form-control" disabled />
+                    <small>Email não pode ser alterado</small>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Input.PhoneNumber"></label>
+                    <input asp-for="Input.PhoneNumber" class="form-control" id="Input_PhoneNumber" placeholder="(63) 99999-9999" />
+                    <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Input.Endereco"></label>
+                    <input asp-for="Input.Endereco" class="form-control" placeholder="Rua, número - Bairro" />
+                    <span asp-validation-for="Input.Endereco" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn-save">💾 Salvar Alterações</button>
+            </form>
+        </div>
+
+        <div class="profile-card">
+            <h2>Alterar Senha</h2>
+            <form method="post" asp-page-handler="ChangePassword">
+                <div class="form-group">
+                    <label asp-for="PasswordInput.OldPassword"></label>
+                    <div class="password-wrapper">
+                        <input asp-for="PasswordInput.OldPassword" class="form-control" type="password" id="old-password" />
+                        <span class="toggle-password" data-target="old-password">👁️</span>
+                    </div>
+                    <span asp-validation-for="PasswordInput.OldPassword" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="PasswordInput.NewPassword"></label>
+                    <div class="password-wrapper">
+                        <input asp-for="PasswordInput.NewPassword" class="form-control" type="password" id="new-password" />
+                        <span class="toggle-password" data-target="new-password">👁️</span>
+                    </div>
+                    <span asp-validation-for="PasswordInput.NewPassword" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="PasswordInput.ConfirmPassword"></label>
+                    <div class="password-wrapper">
+                        <input asp-for="PasswordInput.ConfirmPassword" class="form-control" type="password" id="confirm-password" />
+                        <span class="toggle-password" data-target="confirm-password">👁️</span>
+                    </div>
+                    <span asp-validation-for="PasswordInput.ConfirmPassword" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn-save">🔒 Alterar Senha</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        const userMenu = document.querySelector(".user-menu");
+        const userIcon = document.querySelector(".user-icon");
+        if (userIcon && userMenu) {
+            userIcon.addEventListener("click", () => {
+                userMenu.classList.toggle("active");
+            });
+        }
+
+        // Toggle de mostrar/ocultar senha
+        document.querySelectorAll(".toggle-password").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const targetId = btn.getAttribute("data-target");
+                const input = document.getElementById(targetId);
+                if (input.type === "password") {
+                    input.type = "text";
+                    btn.textContent = "🙈";
+                } else {
+                    input.type = "password";
+                    btn.textContent = "👁️";
+                }
+            });
+        });
+
+        // Máscara de telefone
+        const phoneInput = document.getElementById('Input_PhoneNumber');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+
+                if (value.length > 11) value = value.slice(0, 11);
+
+                if (value.length > 10) {
+                    value = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+                } else if (value.length > 6) {
+                    value = value.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, '($1) $2-$3');
+                } else if (value.length > 2) {
+                    value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+                } else if (value.length > 0) {
+                    value = value.replace(/^(\d{0,2})/, '($1');
+                }
+
+                e.target.value = value;
+            });
+
+            phoneInput.addEventListener('keypress', function(e) {
+                if (e.key < '0' || e.key > '9') {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        // Validação de senha em tempo real
+        const newPasswordInput = document.getElementById('new-password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+
+        if (newPasswordInput) {
+            newPasswordInput.addEventListener('input', function() {
+                const password = this.value;
+                const requirements = {
+                    length: password.length >= 6,
+                    uppercase: /[A-Z]/.test(password),
+                    lowercase: /[a-z]/.test(password),
+                    number: /\d/.test(password),
+                    special: /[@@$!%*?&#]/.test(password)
+                };
+
+                let helpText = 'A senha deve conter: ';
+                const missing = [];
+                if (!requirements.length) missing.push('mínimo 6 caracteres');
+                if (!requirements.uppercase) missing.push('letra maiúscula');
+                if (!requirements.lowercase) missing.push('letra minúscula');
+                if (!requirements.number) missing.push('número');
+                if (!requirements.special) missing.push('caractere especial (@@$!%*?&#)');
+
+                const wrapper = this.closest('.password-wrapper');
+                const span = wrapper.nextElementSibling;
+                if (span && span.classList.contains('text-danger')) {
+                    if (missing.length > 0 && password.length > 0) {
+                        span.textContent = helpText + missing.join(', ');
+                        span.style.display = 'block';
+                    } else {
+                        span.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        if (confirmPasswordInput && newPasswordInput) {
+            confirmPasswordInput.addEventListener('input', function() {
+                const wrapper = this.closest('.password-wrapper');
+                const span = wrapper.nextElementSibling;
+                if (span && span.classList.contains('text-danger')) {
+                    if (this.value !== newPasswordInput.value && this.value.length > 0) {
+                        span.textContent = 'As senhas não coincidem';
+                        span.style.display = 'block';
+                    } else {
+                        span.style.display = 'none';
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

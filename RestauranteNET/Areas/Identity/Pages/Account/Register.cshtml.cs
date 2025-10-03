@@ -1,12 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Text;
-using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.WebUtilities;
 using RestauranteNET.Models;
 
 namespace RestauranteNET.Areas.Identity.Pages.Account
@@ -16,7 +13,6 @@ namespace RestauranteNET.Areas.Identity.Pages.Account
         private readonly SignInManager<Usuario> _signInManager;
         private readonly UserManager<Usuario> _userManager;
         private readonly IUserStore<Usuario> _userStore;
-        private readonly IUserEmailStore<Usuario> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
 
@@ -29,7 +25,6 @@ namespace RestauranteNET.Areas.Identity.Pages.Account
         {
             _userManager = userManager;
             _userStore = userStore;
-            _emailStore = (IUserEmailStore<Usuario>)userStore;
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
@@ -59,16 +54,19 @@ namespace RestauranteNET.Areas.Identity.Pages.Account
             public string? Endereco { get; set; }
 
             [Phone(ErrorMessage = "Telefone inválido")]
-            [RegularExpression(@"^\d{2}\s\d{5}-\d{4}$", ErrorMessage = "Formato: 99 99999-9999")]
+            [RegularExpression(@"^\(\d{2}\)\s\d{4,5}-\d{4}$", ErrorMessage = "Formato: (63) 99999-9999")]
             [Display(Name = "Telefone")]
             public string? Telefone { get; set; }
 
             [Required(ErrorMessage = "A senha é obrigatória")]
             [StringLength(100, ErrorMessage = "A senha deve ter entre {2} e {1} caracteres", MinimumLength = 6)]
             [DataType(DataType.Password)]
+            [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{6,}$",
+                ErrorMessage = "A senha deve conter: letra maiúscula, minúscula, número e caractere especial (@$!%*?&#)")]
             [Display(Name = "Senha")]
             public string Password { get; set; }
 
+            [Required(ErrorMessage = "Confirmação de senha é obrigatória")]
             [DataType(DataType.Password)]
             [Display(Name = "Confirmar senha")]
             [Compare("Password", ErrorMessage = "As senhas não coincidem")]
@@ -83,15 +81,16 @@ namespace RestauranteNET.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/Menu/Index"); // Redireciona para Menu após registro
+            returnUrl ??= Url.Content("~/Menu/Index");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
             if (ModelState.IsValid)
             {
+                // Verificar se email já existe
                 var existingUser = await _userManager.FindByEmailAsync(Input.Email);
                 if (existingUser != null)
                 {
-                    ModelState.AddModelError(string.Empty, "Este email já está cadastrado.");
+                    ModelState.AddModelError(string.Empty, "Este email já está cadastrado. Tente fazer login ou use outro email.");
                     return Page();
                 }
 
@@ -101,16 +100,17 @@ namespace RestauranteNET.Areas.Identity.Pages.Account
                     Email = Input.Email,
                     NomeCompleto = Input.NomeCompleto,
                     Endereco = Input.Endereco,
-                    PhoneNumber = Input.Telefone
+                    PhoneNumber = Input.Telefone,
+                    EmailConfirmed = true
                 };
 
                 var result = await _userManager.CreateAsync(user, Input.Password);
 
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation("Usuário criou uma nova conta com senha.");
+                    _logger.LogInformation("Novo usuário criado com sucesso.");
 
-                    // ADICIONE ESTA LINHA
+                    // Adicionar role Cliente
                     await _userManager.AddToRoleAsync(user, "Cliente");
 
                     await _signInManager.SignInAsync(user, isPersistent: false);

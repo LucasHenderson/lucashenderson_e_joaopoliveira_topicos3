@@ -14,5 +14,7 @@ namespace RestauranteNET.Models
         public decimal Total { get; set; }
         public string Status { get; set; } = "pending";
         public ICollection<ItemPedido> Itens { get; set; } = new List<ItemPedido>();
+
+        public string? EnderecoEntrega { get; set; }
     }
 }

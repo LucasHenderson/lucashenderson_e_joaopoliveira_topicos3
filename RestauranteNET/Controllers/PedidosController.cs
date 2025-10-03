@@ -25,7 +25,7 @@ namespace RestauranteNET.Controllers
         public class PedidoDto
         {
             public string Tipo { get; set; } = string.Empty;
-            public string? Horario { get; set; } // Horário da reserva (opcional)
+            public string? Horario { get; set; }
             public decimal Total { get; set; }
             public List<ItemPedidoDto> Itens { get; set; } = new List<ItemPedidoDto>();
         }
@@ -35,6 +35,45 @@ namespace RestauranteNET.Controllers
             public int ComidaId { get; set; }
             public int Quantidade { get; set; }
             public decimal PrecoUnitario { get; set; }
+        }
+
+        // Verificar disponibilidade de horários
+        [HttpGet("horarios-disponiveis")]
+        public async Task<IActionResult> GetHorariosDisponiveis([FromQuery] string data)
+        {
+            try
+            {
+                if (!DateTime.TryParse(data, out DateTime dataReserva))
+                {
+                    return BadRequest("Data inválida");
+                }
+
+                var horarios = new[] { "19", "20", "21", "22" };
+                var disponibilidade = new Dictionary<string, object>();
+
+                foreach (var horario in horarios)
+                {
+                    var count = await _context.Pedidos
+                        .Where(p => p.Tipo.ToLower() == "reserva"
+                            && p.Horario == horario
+                            && p.Data.Date == dataReserva.Date
+                            && p.Status != "canceled")
+                        .CountAsync();
+
+                    disponibilidade[horario] = new
+                    {
+                        disponivel = count < 5,
+                        reservas = count,
+                        vagas = 5 - count
+                    };
+                }
+
+                return Ok(disponibilidade);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
         // Criar pedido
@@ -50,14 +89,31 @@ namespace RestauranteNET.Controllers
                 if (user == null)
                     return Unauthorized();
 
+                // Validação para reservas
+                if (dto.Tipo == "reserva" && !string.IsNullOrEmpty(dto.Horario))
+                {
+                    var reservasNoHorario = await _context.Pedidos
+                        .Where(p => p.Tipo.ToLower() == "reserva"
+                            && p.Horario == dto.Horario
+                            && p.Data.Date == DateTime.Now.Date
+                            && p.Status != "canceled")
+                        .CountAsync();
+
+                    if (reservasNoHorario >= 5)
+                    {
+                        return BadRequest(new { error = "Este horário está lotado. Escolha outro horário." });
+                    }
+                }
+
                 var pedido = new Pedido
                 {
                     ClienteId = user.Id,
                     Data = DateTime.Now,
                     Tipo = dto.Tipo,
-                    Horario = dto.Tipo == "reserva" ? dto.Horario : null, // Salvar horário apenas para reservas
+                    Horario = dto.Tipo == "reserva" ? dto.Horario : null,
                     Total = dto.Total,
                     Status = "pending",
+                    EnderecoEntrega = user.Endereco,
                     Itens = dto.Itens.Select(i => new ItemPedido
                     {
                         ComidaId = i.ComidaId,
@@ -69,30 +125,20 @@ namespace RestauranteNET.Controllers
                 _context.Pedidos.Add(pedido);
                 await _context.SaveChangesAsync();
 
-                // Adicionar log para verificar o pedido criado
-                Console.WriteLine($"===== DEBUG PEDIDO CRIADO =====");
-                Console.WriteLine($"Pedido ID: {pedido.Id}");
-                Console.WriteLine($"Cliente ID: {pedido.ClienteId}");
-                Console.WriteLine($"Tipo: {pedido.Tipo}");
-                Console.WriteLine($"Horario: {pedido.Horario ?? "N/A"}");
-                Console.WriteLine($"Total: {pedido.Total}");
-                Console.WriteLine($"Itens: {pedido.Itens.Count}");
-                Console.WriteLine($"==============================");
-
                 return Ok(new { message = "Pedido criado com sucesso", id = pedido.Id });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erro ao criar pedido: {ex.Message}");
                 return BadRequest(new { error = ex.Message });
             }
         }
 
-        // Resto do código permanece igual...
         [HttpGet("meus")]
         public async Task<IActionResult> GetMeusPedidos()
         {
             var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized();
 
             var pedidos = await _context.Pedidos
                 .Include(p => p.Itens).ThenInclude(i => i.Comida)
@@ -104,47 +150,81 @@ namespace RestauranteNET.Controllers
         }
 
         [HttpGet("all")]
-        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> GetAllPedidos()
         {
-            var pedidos = await _context.Pedidos
-                .Include(p => p.Cliente)
-                .Include(p => p.Itens).ThenInclude(i => i.Comida)
-                .OrderByDescending(p => p.Data)
-                .ToListAsync();
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                {
+                    return Unauthorized(new { error = "Usuário não autenticado" });
+                }
 
-            return Ok(pedidos);
+                // Verificar se é administrador
+                var isAdmin = await _userManager.IsInRoleAsync(user, "Administrador");
+                if (!isAdmin)
+                {
+                    return Forbid();
+                }
+
+                var pedidos = await _context.Pedidos
+                    .Include(p => p.Cliente)
+                    .Include(p => p.Itens).ThenInclude(i => i.Comida)
+                    .OrderByDescending(p => p.Data)
+                    .ToListAsync();
+
+                return Ok(pedidos);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
         [HttpPut("{id}/status")]
-        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
         {
-            var pedido = await _context.Pedidos.FindAsync(id);
-            if (pedido == null) return NotFound();
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return Unauthorized();
 
-            pedido.Status = status;
-            await _context.SaveChangesAsync();
-            return Ok(pedido);
+                var isAdmin = await _userManager.IsInRoleAsync(user, "Administrador");
+                if (!isAdmin)
+                    return Forbid();
+
+                var pedido = await _context.Pedidos.FindAsync(id);
+                if (pedido == null)
+                    return NotFound();
+
+                pedido.Status = status;
+                await _context.SaveChangesAsync();
+
+                return Ok(pedido);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
-        // Cancelar pedido (apenas pelo cliente e se status = pending)
         [HttpPut("{id}/cancelar")]
         public async Task<IActionResult> CancelarPedido(int id)
         {
             try
             {
                 var user = await _userManager.GetUserAsync(User);
-                var pedido = await _context.Pedidos.FindAsync(id);
+                if (user == null)
+                    return Unauthorized();
 
+                var pedido = await _context.Pedidos.FindAsync(id);
                 if (pedido == null)
                     return NotFound(new { message = "Pedido não encontrado." });
 
-                // Verificar se o pedido pertence ao usuário
                 if (pedido.ClienteId != user.Id)
                     return Forbid();
 
-                // Só pode cancelar se estiver pendente
                 if (pedido.Status != "pending")
                     return BadRequest(new { message = "Apenas pedidos pendentes podem ser cancelados." });
 

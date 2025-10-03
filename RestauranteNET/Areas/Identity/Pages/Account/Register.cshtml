@@ -22,7 +22,7 @@
         <h1>@ViewData["Title"]</h1>
         <h4>Crie sua conta</h4>
 
-        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+        <form id="register-form" asp-route-returnUrl="@Model.ReturnUrl" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="form-group">
@@ -39,7 +39,7 @@
 
             <div class="form-group">
                 <label asp-for="Input.Telefone"></label>
-                <input asp-for="Input.Telefone" class="form-control" id="telefone-input" placeholder="99 99999-9999" />
+                <input asp-for="Input.Telefone" class="form-control" id="phone" placeholder="(63) 99999-9999" />
                 <span asp-validation-for="Input.Telefone" class="text-danger"></span>
             </div>
 
@@ -51,13 +51,19 @@
 
             <div class="form-group">
                 <label asp-for="Input.Password"></label>
-                <input asp-for="Input.Password" class="form-control" placeholder="Digite sua senha" autocomplete="new-password" />
+                <div class="password-wrapper">
+                    <input asp-for="Input.Password" class="form-control" type="password" id="password" placeholder="Digite sua senha" autocomplete="new-password" />
+                    <span class="toggle-password" data-target="password">👁️</span>
+                </div>
                 <span asp-validation-for="Input.Password" class="text-danger"></span>
             </div>
 
             <div class="form-group">
                 <label asp-for="Input.ConfirmPassword"></label>
-                <input asp-for="Input.ConfirmPassword" class="form-control" placeholder="Confirme sua senha" autocomplete="new-password" />
+                <div class="password-wrapper">
+                    <input asp-for="Input.ConfirmPassword" class="form-control" type="password" id="confirm-password" placeholder="Confirme sua senha" autocomplete="new-password" />
+                    <span class="toggle-password" data-target="confirm-password">👁️</span>
+                </div>
                 <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
             </div>
 
@@ -74,19 +80,129 @@
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     <script>
         // Máscara para telefone
-        const telefoneInput = document.getElementById('telefone-input');
-        if (telefoneInput) {
-            telefoneInput.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
+        const phoneInput = document.getElementById("phone");
+        if (phoneInput) {
+            phoneInput.addEventListener("input", () => {
+                let value = phoneInput.value.replace(/\D/g, "");
                 if (value.length > 11) value = value.slice(0, 11);
 
-                if (value.length > 2 && value.length <= 7) {
-                    value = value.replace(/(\d{2})(\d{0,5})/, '$1 $2');
-                } else if (value.length > 7) {
-                    value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '$1 $2-$3');
+                if (value.length > 10) {
+                    value = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+                } else if (value.length > 6) {
+                    value = value.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, '($1) $2-$3');
+                } else if (value.length > 2) {
+                    value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+                } else if (value.length > 0) {
+                    value = value.replace(/^(\d{0,2})/, '($1');
                 }
 
-                e.target.value = value;
+                phoneInput.value = value;
+            });
+        }
+
+        // Toggle de senha
+        document.querySelectorAll(".toggle-password").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const targetId = btn.getAttribute("data-target");
+                const input = document.getElementById(targetId);
+                if (input.type === "password") {
+                    input.type = "text";
+                    btn.textContent = "❌";
+                } else {
+                    input.type = "password";
+                    btn.textContent = "👁️";
+                }
+            });
+        });
+
+        // Validação de senha em tempo real
+        const passwordInput = document.getElementById("password");
+        const confirmPasswordInput = document.getElementById("confirm-password");
+
+        if (passwordInput) {
+            passwordInput.addEventListener("input", function() {
+                const password = this.value;
+                const requirements = {
+                    length: password.length >= 6,
+                    uppercase: /[A-Z]/.test(password),
+                    lowercase: /[a-z]/.test(password),
+                    number: /\d/.test(password),
+                    special: /[@@$!%*?&#]/.test(password)
+                };
+
+                const wrapper = this.closest('.password-wrapper');
+                const span = wrapper ? wrapper.nextElementSibling : this.nextElementSibling;
+
+                if (span && span.classList.contains('text-danger')) {
+                    let helpText = 'A senha deve conter: ';
+                    const missing = [];
+                    if (!requirements.length) missing.push('mínimo 6 caracteres');
+                    if (!requirements.uppercase) missing.push('letra maiúscula');
+                    if (!requirements.lowercase) missing.push('letra minúscula');
+                    if (!requirements.number) missing.push('número');
+                    if (!requirements.special) missing.push('caractere especial (@@$!%*?&#)');
+
+                    if (missing.length > 0 && password.length > 0) {
+                        span.textContent = helpText + missing.join(', ');
+                        span.style.display = 'block';
+                    } else {
+                        span.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        if (confirmPasswordInput && passwordInput) {
+            confirmPasswordInput.addEventListener("input", function() {
+                const wrapper = this.closest('.password-wrapper');
+                const span = wrapper ? wrapper.nextElementSibling : this.nextElementSibling;
+
+                if (span && span.classList.contains('text-danger')) {
+                    if (this.value !== passwordInput.value && this.value.length > 0) {
+                        span.textContent = 'As senhas não coincidem';
+                        span.style.display = 'block';
+                    } else {
+                        span.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // VALIDAÇÃO NO SUBMIT - BLOQUEIA ENVIO SE INVÁLIDO
+        const form = document.getElementById("register-form");
+        if (form) {
+            form.addEventListener("submit", (e) => {
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+
+                // Verificar se senhas coincidem
+                if (password !== confirmPassword) {
+                    e.preventDefault();
+                    alert("⚠️ As senhas não coincidem. Por favor, digite novamente.");
+                    return false;
+                }
+
+                // Verificar requisitos da senha
+                const hasUppercase = /[A-Z]/.test(password);
+                const hasLowercase = /[a-z]/.test(password);
+                const hasNumber = /\d/.test(password);
+                const hasSpecial = /[@@$!%*?&#]/.test(password);
+                const hasMinLength = password.length >= 6;
+
+                if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecial || !hasMinLength) {
+                    e.preventDefault();
+                    let missing = [];
+                    if (!hasMinLength) missing.push('mínimo 6 caracteres');
+                    if (!hasUppercase) missing.push('letra MAIÚSCULA');
+                    if (!hasLowercase) missing.push('letra minúscula');
+                    if (!hasNumber) missing.push('NÚMERO');
+                    if (!hasSpecial) missing.push('caractere ESPECIAL (@@$!%*?&#)');
+
+                    alert('⚠️ Senha inválida!\n\nA senha deve conter:\n• ' + missing.join('\n• '));
+                    return false;
+                }
+
+                return true;
             });
         }
     </script>

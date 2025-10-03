@@ -430,3 +430,23 @@ body {
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
+.reservation-btn:disabled,
+.reservation-btn.full {
+    background: #333 !important;
+    color: #666 !important;
+    cursor: not-allowed !important;
+    border-color: #444 !important;
+    opacity: 0.5;
+}
+
+.reservation-btn small {
+    font-size: 10px;
+    display: block;
+    margin-top: 2px;
+    font-weight: normal;
+}
+
+.reservation-btn:not(:disabled):hover small {
+    color: #fff;
+}

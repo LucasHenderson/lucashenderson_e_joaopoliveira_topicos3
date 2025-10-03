@@ -20,7 +20,7 @@ let todasComidas = [];
 // PAGINAÇÃO
 let currentPageChef = 1;
 let currentPageMenu = 1;
-const itemsPerPage = 6; // 6 itens por página
+const itemsPerPage = 6;
 
 async function loadComidas() {
     try {
@@ -45,7 +45,6 @@ function renderComidas(container, comidas, isChef, currentPage = 1) {
     const paginationId = isChef ? 'chef-pagination' : 'menu-pagination';
     let paginationContainer = document.getElementById(paginationId);
 
-    // Criar container de paginação se não existir
     if (!paginationContainer) {
         paginationContainer = document.createElement('div');
         paginationContainer.id = paginationId;
@@ -56,7 +55,6 @@ function renderComidas(container, comidas, isChef, currentPage = 1) {
     container.innerHTML = '';
     paginationContainer.innerHTML = '';
 
-    // Calcular paginação
     const totalPages = Math.ceil(comidas.length / itemsPerPage);
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
@@ -124,7 +122,6 @@ function renderComidas(container, comidas, isChef, currentPage = 1) {
         container.appendChild(div);
     });
 
-    // Renderizar botões de paginação
     if (totalPages > 1) {
         const prevBtn = document.createElement('button');
         prevBtn.textContent = '← Anterior';
@@ -231,6 +228,33 @@ function updateTotal() {
     document.getElementById('confirm-order').addEventListener('click', confirmarPedido);
 }
 
+// Verificar disponibilidade de horários
+async function checkHorariosDisponiveis() {
+    const hoje = new Date().toISOString().split('T')[0];
+
+    try {
+        const response = await fetch(`/api/pedidos/horarios-disponiveis?data=${hoje}`);
+        if (response.ok) {
+            const disponibilidade = await response.json();
+
+            document.querySelectorAll('.reservation-btn').forEach(btn => {
+                const horario = btn.dataset.time;
+                const info = disponibilidade[horario];
+
+                if (info && !info.disponivel) {
+                    btn.disabled = true;
+                    btn.classList.add('full');
+                    btn.innerHTML = `${horario}:00 <br><small>LOTADO</small>`;
+                } else if (info) {
+                    btn.innerHTML = `${horario}:00 <br><small>${info.vagas} vagas</small>`;
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao verificar disponibilidade:', error);
+    }
+}
+
 const serviceBtns = document.querySelectorAll('.service-btn');
 serviceBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -242,9 +266,10 @@ serviceBtns.forEach(btn => {
         const reservationDiv = document.getElementById('reservation-times');
         if (serviceType === 'reserva' && reservationDiv) {
             reservationDiv.classList.remove('hidden');
+            checkHorariosDisponiveis(); // Verificar disponibilidade
         } else if (reservationDiv) {
             reservationDiv.classList.add('hidden');
-            selectedReservation = null; // Resetar horário quando não for reserva
+            selectedReservation = null;
             const reservaMsg = document.querySelector('.reserva-msg');
             if (reservaMsg) {
                 reservaMsg.textContent = '';
@@ -260,6 +285,8 @@ const reservaMsg = document.querySelector('.reserva-msg');
 
 reservationBtns.forEach(btn => {
     btn.addEventListener('click', () => {
+        if (btn.disabled) return; // Não permitir seleção se estiver lotado
+
         const time = btn.dataset.time;
 
         reservationBtns.forEach(b => b.classList.remove('active'));
@@ -272,7 +299,7 @@ reservationBtns.forEach(btn => {
             reservaMsg.style.color = 'lightgreen';
         }
 
-        updateTotal(); // Atualizar o resumo para mostrar o horário
+        updateTotal();
     });
 });
 
@@ -313,15 +340,8 @@ function confirmarPedido() {
         tipo: serviceType,
         total: total,
         itens: itens,
-        horario: serviceType === 'reserva' ? selectedReservation : null // Incluir horário apenas para reservas
+        horario: serviceType === 'reserva' ? selectedReservation : null
     };
-
-    console.log('===== DEBUG PEDIDO ENVIADO =====');
-    console.log('Tipo:', pedido.tipo);
-    console.log('Horario:', pedido.horario);
-    console.log('Total:', pedido.total);
-    console.log('Itens:', pedido.itens);
-    console.log('============================');
 
     fetch('/api/pedidos', {
         method: 'POST',
@@ -334,8 +354,7 @@ function confirmarPedido() {
                 location.reload();
             } else {
                 response.json().then(data => {
-                    console.error('Erro do servidor:', data);
-                    alert('❌ Erro ao confirmar pedido: ' + (data.error || 'Tente novamente.'));
+                    alert('❌ ' + (data.error || 'Erro ao confirmar pedido.'));
                 });
             }
         })

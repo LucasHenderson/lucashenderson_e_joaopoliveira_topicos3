@@ -89,7 +89,7 @@ function renderLista(listId, lista, paginationId, totalId, currentPage, filterDa
         li.innerHTML = `
             <div class="order-header">${pedido.cliente.nomeCompleto}</div>
             <div class="order-details">Comidas: ${comidasHTML}</div>
-            <div class="order-details">Endereço: ${pedido.cliente.endereco || 'N/A'}</div>
+            <div class="order-details">Endereço: ${pedido.enderecoEntrega || 'N/A'}</div>
             <div class="order-details">Data: ${dataFormatada}</div>
             ${isReserva && pedido.horario ? `<div class="order-details">Horário: ${pedido.horario}:00</div>` : ""}
             <div class="order-details">Valor Total: R$ ${pedido.total.toFixed(2)}</div>

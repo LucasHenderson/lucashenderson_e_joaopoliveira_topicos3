@@ -12,7 +12,7 @@ namespace RestauranteNET.Models
         [MaxLength(200)]
         public string? Endereco { get; set; }
 
-        [MaxLength(15)]
-        public string? Telefone { get; set; }
+        //[MaxLength(15)]
+        //public string? Telefone { get; set; }
     }
 }
