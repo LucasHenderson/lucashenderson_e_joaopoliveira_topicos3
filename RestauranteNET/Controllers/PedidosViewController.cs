@@ -23,7 +23,6 @@
         {
             var user = await _userManager.GetUserAsync(User);
 
-            // DEBUG
             Console.WriteLine($"===== DEBUG MEUS PEDIDOS =====");
             Console.WriteLine($"User ID: {user?.Id}");
             Console.WriteLine($"User Email: {user?.Email}");
@@ -34,11 +33,10 @@
                 .OrderByDescending(p => p.Data)
                 .ToListAsync();
 
-            // DEBUG
             Console.WriteLine($"Total de pedidos encontrados: {pedidos.Count}");
             foreach (var p in pedidos)
             {
-                Console.WriteLine($"Pedido ID: {p.Id}, Tipo: {p.Tipo}, Total: {p.Total}, Itens: {p.Itens.Count}");
+                Console.WriteLine($"Pedido ID: {p.Id}, Tipo: {p.Tipo}, Status: '{p.Status}', Total: {p.Total}, Itens: {p.Itens.Count}");
             }
             Console.WriteLine($"==============================");
 

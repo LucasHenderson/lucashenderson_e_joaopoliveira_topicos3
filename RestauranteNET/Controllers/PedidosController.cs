@@ -127,5 +127,36 @@ namespace RestauranteNET.Controllers
             await _context.SaveChangesAsync();
             return Ok(pedido);
         }
+
+        // Cancelar pedido (apenas pelo cliente e se status = pending)
+        [HttpPut("{id}/cancelar")]
+        public async Task<IActionResult> CancelarPedido(int id)
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                var pedido = await _context.Pedidos.FindAsync(id);
+
+                if (pedido == null)
+                    return NotFound(new { message = "Pedido não encontrado." });
+
+                // Verificar se o pedido pertence ao usuário
+                if (pedido.ClienteId != user.Id)
+                    return Forbid();
+
+                // Só pode cancelar se estiver pendente
+                if (pedido.Status != "pending")
+                    return BadRequest(new { message = "Apenas pedidos pendentes podem ser cancelados." });
+
+                pedido.Status = "canceled";
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Pedido cancelado com sucesso." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }

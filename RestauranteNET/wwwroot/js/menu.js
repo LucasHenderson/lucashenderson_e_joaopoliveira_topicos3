@@ -17,6 +17,11 @@ let serviceType = null;
 let selectedReservation = null;
 let todasComidas = [];
 
+// PAGINAÇÃO
+let currentPageChef = 1;
+let currentPageMenu = 1;
+const itemsPerPage = 6; // 6 itens por página
+
 async function loadComidas() {
     try {
         const response = await fetch('/api/comidas');
@@ -29,17 +34,35 @@ async function loadComidas() {
         const comidasChef = todasComidas.filter(c => c.chef);
         const comidasNormais = todasComidas.filter(c => !c.chef);
 
-        renderComidas(chefList, comidasChef, true);
-        renderComidas(menuList, comidasNormais, false);
+        renderComidas(chefList, comidasChef, true, currentPageChef);
+        renderComidas(menuList, comidasNormais, false, currentPageMenu);
     } catch (error) {
         console.error('Erro:', error);
     }
 }
 
-function renderComidas(container, comidas, isChef) {
-    container.innerHTML = '';
+function renderComidas(container, comidas, isChef, currentPage = 1) {
+    const paginationId = isChef ? 'chef-pagination' : 'menu-pagination';
+    let paginationContainer = document.getElementById(paginationId);
 
-    comidas.forEach(comida => {
+    // Criar container de paginação se não existir
+    if (!paginationContainer) {
+        paginationContainer = document.createElement('div');
+        paginationContainer.id = paginationId;
+        paginationContainer.className = 'pagination';
+        container.parentElement.appendChild(paginationContainer);
+    }
+
+    container.innerHTML = '';
+    paginationContainer.innerHTML = '';
+
+    // Calcular paginação
+    const totalPages = Math.ceil(comidas.length / itemsPerPage);
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const comidasPagina = comidas.slice(start, end);
+
+    comidasPagina.forEach(comida => {
         const div = document.createElement('div');
         div.classList.add('food-item');
         if (isChef) div.classList.add('chef');
@@ -100,6 +123,47 @@ function renderComidas(container, comidas, isChef) {
 
         container.appendChild(div);
     });
+
+    // Renderizar botões de paginação
+    if (totalPages > 1) {
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '← Anterior';
+        prevBtn.className = 'pagination-btn';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener('click', () => {
+            if (isChef) {
+                currentPageChef--;
+                renderComidas(container, comidas, isChef, currentPageChef);
+            } else {
+                currentPageMenu--;
+                renderComidas(container, comidas, isChef, currentPageMenu);
+            }
+            window.scrollTo({ top: container.offsetTop - 100, behavior: 'smooth' });
+        });
+
+        const pageInfo = document.createElement('span');
+        pageInfo.className = 'page-info';
+        pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = 'Próximo →';
+        nextBtn.className = 'pagination-btn';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener('click', () => {
+            if (isChef) {
+                currentPageChef++;
+                renderComidas(container, comidas, isChef, currentPageChef);
+            } else {
+                currentPageMenu++;
+                renderComidas(container, comidas, isChef, currentPageMenu);
+            }
+            window.scrollTo({ top: container.offsetTop - 100, behavior: 'smooth' });
+        });
+
+        paginationContainer.appendChild(prevBtn);
+        paginationContainer.appendChild(pageInfo);
+        paginationContainer.appendChild(nextBtn);
+    }
 }
 
 function updateQuantity(id) {

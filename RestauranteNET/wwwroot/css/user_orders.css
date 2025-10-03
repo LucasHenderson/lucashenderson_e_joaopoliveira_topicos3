@@ -179,3 +179,35 @@ body {
   cursor: not-allowed;
   color: #777;
 }
+.status-confirmed {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.status-canceled {
+    color: #f44336;
+    font-weight: bold;
+}
+
+.status-pending {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+.cancel-btn {
+    margin-top: 0.8rem;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    background: #71100f;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+}
+
+    .cancel-btn:hover {
+        background: #430909;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(113, 16, 15, 0.4);
+    }

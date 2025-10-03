@@ -32,112 +32,157 @@
     </header>
 
     <div class="orders-container">
+        <h1>Meus Pedidos (@Model.Count() total)</h1>
+
         <section class="orders-section">
-            <h2>📦 Delivery Próprio</h2>
-            <ul class="order-list">
-                @foreach (var pedido in Model.Where(p => p.Tipo == "proprio"))
-                {
-                    <li class="order-item">
-                        <div class="order-header">
-                            @foreach (var item in pedido.Itens)
+            <h2>📦 Delivery Próprio (@Model.Count(p => p.Tipo.ToLower() == "proprio"))</h2>
+            @if (!Model.Any(p => p.Tipo.ToLower() == "proprio"))
+            {
+                <p style="color: #888; padding: 1rem;">Nenhum pedido de delivery próprio encontrado.</p>
+            }
+            else
+            {
+                <ul class="order-list">
+                    @foreach (var pedido in Model.Where(p => p.Tipo.ToLower() == "proprio"))
+                    {
+                        <li class="order-item">
+                            <div class="order-header">
+                                @foreach (var item in pedido.Itens)
+                                {
+                                    <span>@item.Comida.Nome (@item.Quantidade) </span>
+                                }
+                            </div>
+                            <div class="order-details">Total: R$ @pedido.Total.ToString("F2")</div>
+                            <div class="order-details">Data: @pedido.Data.ToString("dd/MM/yyyy HH:mm")</div>
+                            <div class="order-status">
+                                Status:
+                                @{
+                                    var status = pedido.Status.ToLower();
+                                }
+                                @if (status == "confirmed")
+                                {
+                                    <span class="status-confirmed">✅ Confirmado</span>
+                                }
+                                else if (status == "canceled")
+                                {
+                                    <span class="status-canceled">❌ Cancelado</span>
+                                }
+                                else
+                                {
+                                    <span class="status-pending">⏳ Aguardando Confirmação</span>
+                                }
+                            </div>
+                            @if (status == "pending")
                             {
-                                <span>@item.Comida.Nome (@item.Quantidade) </span>
+                                <button class="cancel-btn" onclick="cancelarPedido(@pedido.Id)">Cancelar Pedido</button>
                             }
-                        </div>
-                        <div class="order-details">Total: R$ @pedido.Total.ToString("F2")</div>
-                        <div class="order-details">Data: @pedido.Data.ToString("dd/MM/yyyy HH:mm")</div>
-                        <div class="order-status">
-                            Status:
-                            @if (pedido.Status == "confirmed")
-                            {
-                                <span>✅ Confirmado</span>
-                            }
-                            else if (pedido.Status == "canceled")
-                            {
-                                <span>❌ Cancelado</span>
-                            }
-                            else
-                            {
-                                <span>⏳ Aguardando</span>
-                            }
-                        </div>
-                    </li>
-                }
-            </ul>
+                        </li>
+                    }
+                </ul>
+            }
         </section>
 
         <section class="orders-section">
-            <h2>🚚 Delivery Parceiro</h2>
-            <ul class="order-list">
-                @foreach (var pedido in Model.Where(p => p.Tipo == "parceiro"))
-                {
-                    <li class="order-item">
-                        <div class="order-header">
-                            @foreach (var item in pedido.Itens)
+            <h2>🚚 Delivery Parceiro (@Model.Count(p => p.Tipo.ToLower() == "parceiro"))</h2>
+            @if (!Model.Any(p => p.Tipo.ToLower() == "parceiro"))
+            {
+                <p style="color: #888; padding: 1rem;">Nenhum pedido de delivery parceiro encontrado.</p>
+            }
+            else
+            {
+                <ul class="order-list">
+                    @foreach (var pedido in Model.Where(p => p.Tipo.ToLower() == "parceiro"))
+                    {
+                        <li class="order-item">
+                            <div class="order-header">
+                                @foreach (var item in pedido.Itens)
+                                {
+                                    <span>@item.Comida.Nome (@item.Quantidade) </span>
+                                }
+                            </div>
+                            <div class="order-details">Total: R$ @pedido.Total.ToString("F2")</div>
+                            <div class="order-details">Data: @pedido.Data.ToString("dd/MM/yyyy HH:mm")</div>
+                            <div class="order-status">
+                                Status:
+                                @{
+                                    var status = pedido.Status.ToLower();
+                                }
+                                @if (status == "confirmed")
+                                {
+                                    <span class="status-confirmed">✅ Confirmado</span>
+                                }
+                                else if (status == "canceled")
+                                {
+                                    <span class="status-canceled">❌ Cancelado</span>
+                                }
+                                else
+                                {
+                                    <span class="status-pending">⏳ Aguardando Confirmação</span>
+                                }
+                            </div>
+                            @if (status == "pending")
                             {
-                                <span>@item.Comida.Nome (@item.Quantidade) </span>
+                                <button class="cancel-btn" onclick="cancelarPedido(@pedido.Id)">Cancelar Pedido</button>
                             }
-                        </div>
-                        <div class="order-details">Total: R$ @pedido.Total.ToString("F2")</div>
-                        <div class="order-details">Data: @pedido.Data.ToString("dd/MM/yyyy HH:mm")</div>
-                        <div class="order-status">
-                            Status:
-                            @if (pedido.Status == "confirmed")
-                            {
-                                <span>✅ Confirmado</span>
-                            }
-                            else if (pedido.Status == "canceled")
-                            {
-                                <span>❌ Cancelado</span>
-                            }
-                            else
-                            {
-                                <span>⏳ Aguardando</span>
-                            }
-                        </div>
-                    </li>
-                }
-            </ul>
+                        </li>
+                    }
+                </ul>
+            }
         </section>
 
         <section class="orders-section">
-            <h2>🍽️ Reservas</h2>
-            <ul class="order-list">
-                @foreach (var pedido in Model.Where(p => p.Tipo == "reserva"))
-                {
-                    <li class="order-item">
-                        <div class="order-header">
-                            @foreach (var item in pedido.Itens)
+            <h2>🍽️ Reservas (@Model.Count(p => p.Tipo.ToLower() == "reserva"))</h2>
+            @if (!Model.Any(p => p.Tipo.ToLower() == "reserva"))
+            {
+                <p style="color: #888; padding: 1rem;">Nenhuma reserva encontrada.</p>
+            }
+            else
+            {
+                <ul class="order-list">
+                    @foreach (var pedido in Model.Where(p => p.Tipo.ToLower() == "reserva"))
+                    {
+                        <li class="order-item">
+                            <div class="order-header">
+                                @foreach (var item in pedido.Itens)
+                                {
+                                    <span>@item.Comida.Nome (@item.Quantidade) </span>
+                                }
+                            </div>
+                            <div class="order-details">Total: R$ @pedido.Total.ToString("F2")</div>
+                            <div class="order-details">Data: @pedido.Data.ToString("dd/MM/yyyy")</div>
+                            @if (!string.IsNullOrEmpty(pedido.Horario))
                             {
-                                <span>@item.Comida.Nome (@item.Quantidade) </span>
+                                <div class="order-details">Horário: @pedido.Horario:00</div>
                             }
-                        </div>
-                        <div class="order-details">Total: R$ @pedido.Total.ToString("F2")</div>
-                        <div class="order-details">Data: @pedido.Data.ToString("dd/MM/yyyy")</div>
-                        @if (!string.IsNullOrEmpty(pedido.Horario))
-                        {
-                            <div class="order-details">Horário: @pedido.Horario</div>
-                        }
-                        <div class="order-status">
-                            Status:
-                            @if (pedido.Status == "confirmed")
+                            <div class="order-status">
+                                Status:
+                                @{
+                                    var status = pedido.Status.ToLower();
+                                }
+                                @if (status == "confirmed")
+                                {
+                                    <span class="status-confirmed">✅ Confirmado</span>
+                                }
+                                else if (status == "canceled")
+                                {
+                                    <span class="status-canceled">❌ Cancelado</span>
+                                }
+                                else
+                                {
+                                    <span class="status-pending">⏳ Aguardando Confirmação</span>
+                                }
+                            </div>
+                            @if (status == "pending")
                             {
-                                <span>✅ Confirmado</span>
+                                <button class="cancel-btn" onclick="cancelarPedido(@pedido.Id)">Cancelar Reserva</button>
                             }
-                            else if (pedido.Status == "canceled")
-                            {
-                                <span>❌ Cancelado</span>
-                            }
-                            else
-                            {
-                                <span>⏳ Aguardando</span>
-                            }
-                        </div>
-                    </li>
-                }
-            </ul>
+                        </li>
+                    }
+                </ul>
+            }
         </section>
     </div>
+
     <script>
         const userMenu = document.querySelector(".user-menu");
         const userIcon = document.querySelector(".user-icon");
@@ -145,6 +190,32 @@
             userIcon.addEventListener("click", () => {
                 userMenu.classList.toggle("active");
             });
+        }
+
+        async function cancelarPedido(pedidoId) {
+            if (!confirm('Tem certeza que deseja cancelar este pedido?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/pedidos/${pedidoId}/cancelar`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    alert('✅ Pedido cancelado com sucesso!');
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('❌ Erro ao cancelar pedido: ' + (error.message || 'Tente novamente.'));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('❌ Erro ao cancelar pedido. Tente novamente.');
+            }
         }
     </script>
 </body>

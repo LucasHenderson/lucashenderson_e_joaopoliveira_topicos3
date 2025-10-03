@@ -13,10 +13,39 @@ const paginationEl = document.getElementById("pagination");
 const addFoodModal = document.getElementById("add-food-modal");
 const addFoodForm = document.getElementById("add-food-form");
 const cancelAddFoodBtn = document.getElementById("cancel-add-food");
-const addFoodError = document.getElementById("add-food-error");
 
 let currentPage = 1;
-const itemsPerPage = 5;
+const itemsPerPage = 6;
+
+// Máscara de preço
+function formatPrice(value) {
+    // Remove tudo exceto números
+    value = value.replace(/\D/g, '');
+
+    // Converte para número e divide por 100 para ter centavos
+    value = (parseInt(value) || 0) / 100;
+
+    // Formata com 2 casas decimais
+    return value.toFixed(2).replace('.', ',');
+}
+
+function parsePrice(formattedValue) {
+    // Converte de "12,50" para 12.50
+    return parseFloat(formattedValue.replace(',', '.')) || 0;
+}
+
+function applyPriceMask(input) {
+    input.addEventListener('input', (e) => {
+        e.target.value = formatPrice(e.target.value);
+    });
+
+    input.addEventListener('keypress', (e) => {
+        // Permite apenas números
+        if (e.key < '0' || e.key > '9') {
+            e.preventDefault();
+        }
+    });
+}
 
 async function loadComidas() {
     try {
@@ -109,25 +138,49 @@ function renderComidas() {
         li.classList.add("food-item");
         if (comida.isNew) {
             li.classList.add("new");
-            delete comida.isNew; // Remove flag após renderizar
+            setTimeout(() => delete comida.isNew, 2000);
         }
 
         li.innerHTML = `
-            <img src="${comida.imgUrl || '/imgs/img-null.png'}" alt="${comida.nome}">
+            <img src="${comida.imgUrl || '/imgs/img-null.png'}" alt="${comida.nome}" title="Clique para alterar imagem">
             <div class="food-details">
                 <input type="text" value="${comida.nome}" placeholder="Nome da comida" data-field="nome">
-                <textarea rows="2" placeholder="Descrição da comida" data-field="descricao">${comida.descricao}</textarea>
-                <input type="number" step="0.01" min="0" value="${comida.preco}" data-field="preco">
+                <textarea rows="2" placeholder="Descrição da comida" data-field="descricao">${comida.descricao || ''}</textarea>
+                <div class="price-input-wrapper">
+                    <span class="currency">R$</span>
+                    <input type="text" value="${comida.preco.toFixed(2).replace('.', ',')}" data-field="preco" placeholder="0,00">
+                </div>
             </div>
             <div class="food-actions">
-                <button class="save-btn">💾</button>
-                <button class="delete-btn">🗑</button>
-                <button class="chef-btn ${comida.chef ? "active" : ""}">👨‍🍳</button>
+                <button class="save-btn" title="Salvar alterações">💾</button>
+                <button class="delete-btn" title="Deletar comida">🗑</button>
+                <button class="chef-btn ${comida.chef ? "active" : ""}" title="Marcar como recomendação do chef">👨‍🍳</button>
             </div>
         `;
 
+        const nomeInput = li.querySelector('[data-field="nome"]');
+        const descInput = li.querySelector('[data-field="descricao"]');
+        const precoInput = li.querySelector('[data-field="preco"]');
+
+        // Aplicar máscara de preço
+        applyPriceMask(precoInput);
+
+        nomeInput.addEventListener("input", e => comida.nome = e.target.value);
+        descInput.addEventListener("input", e => comida.descricao = e.target.value);
+        precoInput.addEventListener("input", e => {
+            comida.preco = parsePrice(e.target.value);
+        });
+
         const saveBtn = li.querySelector(".save-btn");
         saveBtn.addEventListener("click", async () => {
+            if (!comida.nome.trim()) {
+                alert('O nome da comida é obrigatório!');
+                return;
+            }
+            if (comida.preco <= 0) {
+                alert('O preço deve ser maior que zero!');
+                return;
+            }
             try {
                 await saveComida(comida);
                 alert('Comida salva com sucesso!');
@@ -138,7 +191,7 @@ function renderComidas() {
 
         const deleteBtn = li.querySelector(".delete-btn");
         deleteBtn.addEventListener("click", async () => {
-            if (confirm('Deseja realmente deletar esta comida?')) {
+            if (confirm(`Deseja realmente deletar "${comida.nome}"?`)) {
                 await deleteComida(comida.id);
             }
         });
@@ -152,22 +205,6 @@ function renderComidas() {
                 alert('Status de Chef atualizado!');
             } catch (error) {
                 alert('Erro ao atualizar status de Chef: ' + error.message);
-            }
-        });
-
-        const nomeInput = li.querySelector('[data-field="nome"]');
-        const descInput = li.querySelector('[data-field="descricao"]');
-        const precoInput = li.querySelector('[data-field="preco"]');
-
-        nomeInput.addEventListener("input", e => comida.nome = e.target.value);
-        descInput.addEventListener("input", e => comida.descricao = e.target.value);
-        precoInput.addEventListener("input", e => {
-            let val = parseFloat(e.target.value);
-            if (isNaN(val) || val < 0) {
-                e.target.value = 0;
-                comida.preco = 0;
-            } else {
-                comida.preco = val;
             }
         });
 
@@ -207,25 +244,34 @@ function renderComidas() {
         foodList.appendChild(li);
     });
 
+    // Paginação
     paginationEl.innerHTML = "";
     if (totalPages > 1) {
         const prevBtn = document.createElement("button");
-        prevBtn.textContent = "Anterior";
+        prevBtn.textContent = "← Anterior";
         prevBtn.disabled = currentPage === 1;
         prevBtn.addEventListener("click", () => {
             currentPage--;
             renderComidas();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
+        const pageInfo = document.createElement("span");
+        pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+        pageInfo.style.color = "#f5f5f5";
+        pageInfo.style.padding = "0 1rem";
+
         const nextBtn = document.createElement("button");
-        nextBtn.textContent = "Próximo";
+        nextBtn.textContent = "Próximo →";
         nextBtn.disabled = currentPage === totalPages;
         nextBtn.addEventListener("click", () => {
             currentPage++;
             renderComidas();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
         paginationEl.appendChild(prevBtn);
+        paginationEl.appendChild(pageInfo);
         paginationEl.appendChild(nextBtn);
     }
 }
@@ -237,24 +283,30 @@ addFoodBtn.addEventListener("click", () => {
 cancelAddFoodBtn.addEventListener("click", () => {
     addFoodModal.style.display = 'none';
     addFoodForm.reset();
-    addFoodError.style.display = 'none';
 });
+
+const modalPriceInput = document.getElementById("food-price");
+applyPriceMask(modalPriceInput);
 
 addFoodForm.addEventListener("submit", async e => {
     e.preventDefault();
     const name = document.getElementById("food-name").value.trim();
     const description = document.getElementById("food-description").value.trim();
-    const price = parseFloat(document.getElementById("food-price").value);
+    const priceValue = parsePrice(modalPriceInput.value);
     const chef = document.getElementById("food-chef").checked;
     const file = document.getElementById("food-image").files[0];
 
-    try {
-        if (!name || price <= 0) {
-            addFoodError.textContent = 'Nome e preço são obrigatórios.';
-            addFoodError.style.display = 'block';
-            return;
-        }
+    if (!name) {
+        alert('O nome da comida é obrigatório!');
+        return;
+    }
 
+    if (priceValue <= 0) {
+        alert('O preço deve ser maior que zero!');
+        return;
+    }
+
+    try {
         let imgUrl = '/imgs/img-null.png';
         if (file) {
             const formData = new FormData();
@@ -275,7 +327,7 @@ addFoodForm.addEventListener("submit", async e => {
             id: 0,
             nome: name,
             descricao: description,
-            preco: price,
+            preco: priceValue,
             chef: chef,
             imgUrl: imgUrl,
             isNew: true
@@ -284,11 +336,9 @@ addFoodForm.addEventListener("submit", async e => {
         await saveComida(novaComida);
         addFoodModal.style.display = 'none';
         addFoodForm.reset();
-        addFoodError.style.display = 'none';
         alert('Comida adicionada com sucesso!');
     } catch (error) {
-        addFoodError.textContent = 'Erro ao adicionar comida: ' + error.message;
-        addFoodError.style.display = 'block';
+        alert('Erro ao adicionar comida: ' + error.message);
     }
 });
 
